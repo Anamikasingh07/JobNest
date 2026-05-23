@@ -1,0 +1,20 @@
+.column{
+
+  background:#faf5ff;
+
+  border-radius:24px;
+
+  padding:20px;
+
+  min-height:500px;
+
+  border:
+  1px solid #ede9fe;
+}
+
+.column h2{
+
+  margin-bottom:20px;
+
+  color:#7c3aed;
+}

@@ -1,0 +1,105 @@
+.job-card{
+
+  background:white;
+
+  border-radius:22px;
+
+  padding:18px;
+
+  margin-bottom:18px;
+
+  box-shadow:
+  0 6px 18px rgba(0,0,0,0.05);
+}
+
+/* TOP */
+.job-top{
+
+  display:flex;
+
+  justify-content:space-between;
+
+  margin-bottom:14px;
+}
+
+.job-top h4{
+  margin-bottom:4px;
+}
+
+/* PRIORITY */
+.priority{
+
+  padding:6px 12px;
+
+  border-radius:12px;
+
+  font-size:12px;
+
+  font-weight:600;
+}
+
+.high{
+  background:#fee2e2;
+  color:#dc2626;
+}
+
+.medium{
+  background:#fef3c7;
+  color:#d97706;
+}
+
+.low{
+  background:#dcfce7;
+  color:#16a34a;
+}
+
+/* INFO */
+.job-info,
+.job-notes{
+
+  margin-bottom:12px;
+
+  color:#6b7280;
+
+  font-size:14px;
+}
+
+/* BUTTONS */
+.tracker-buttons{
+
+  display:flex;
+
+  gap:10px;
+
+  margin-top:14px;
+}
+
+.interview-btn,
+.reject-btn{
+
+  flex:1;
+
+  border:none;
+
+  padding:10px;
+
+  border-radius:12px;
+
+  cursor:pointer;
+
+  font-weight:600;
+}
+
+.interview-btn{
+
+  background:#ede9fe;
+
+  color:#7c3aed;
+}
+
+.reject-btn{
+
+  background:#fee2e2;
+
+  color:#dc2626;
+}
