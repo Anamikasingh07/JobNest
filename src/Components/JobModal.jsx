@@ -22,12 +22,11 @@ const JobModal = ({
 
         <h2>{job.company}</h2>
 
-        <h3>{job.role}</h3>
+        <h3>{job.title}</h3>
 
         <p>
-          This is a great opportunity for
-          developers interested in modern
-          technologies.
+          {job.description ||
+            "This is a great opportunity for developers interested in modern technologies."}
         </p>
 
         <button

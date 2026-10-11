@@ -9,48 +9,49 @@ const AdminApplications = ({
 
     <div className="admin-applications">
 
-      <h2>
-        All Applications
-      </h2>
+      <h2>All Applications</h2>
 
       {jobs.length === 0 ? (
 
-        <p>
-          No applications found
-        </p>
+        <p>No applications found</p>
 
       ) : (
 
         <div className="applications-grid">
 
-          {jobs.map((job) => (
+          {jobs.map((application) => (
 
             <div
               className="application-card"
-              key={job.id}
+              key={application._id}
             >
 
               <h3>
-                {job.company}
+                {application.job?.company}
               </h3>
 
               <p>
-                {job.role}
+                {application.job?.title}
+              </p>
+
+              <p>
+                Applicant:
+                {" "}
+                {application.user?.name}
               </p>
 
               <h4>
                 Status:
                 {" "}
-                {job.status}
+                {application.status}
               </h4>
 
-              {/* STATUS BUTTONS */}
               <div className="status-buttons">
 
                 <button
                   onClick={() =>
                     updateJobStatus(
-                      job.id,
+                      application._id,
                       "Interview"
                     )
                   }
@@ -61,7 +62,7 @@ const AdminApplications = ({
                 <button
                   onClick={() =>
                     updateJobStatus(
-                      job.id,
+                      application._id,
                       "Rejected"
                     )
                   }
@@ -72,7 +73,7 @@ const AdminApplications = ({
                 <button
                   onClick={() =>
                     updateJobStatus(
-                      job.id,
+                      application._id,
                       "Selected"
                     )
                   }

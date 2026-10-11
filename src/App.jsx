@@ -8,11 +8,13 @@ import Sidebar from "./Components/Sidebar";
 import TrackerPage from "./Components/TrackerPage";
 import Joblist from "./Components/Joblist";
 
+
 import {
 
   applyJob,
   getMyApplications,
-  getAllApplications
+  getAllApplications,
+   updateStatus
 
 } from "./services/applicationService";
 
@@ -27,6 +29,7 @@ import AIPage from "./Components/AIPage";
 import {
   getJobs
 } from "./services/jobService";
+
 
 function App() {
 
@@ -89,32 +92,34 @@ const [appliedJobs, setAppliedJobs] =
 
 }, [currentUser]);
 
-const fetchApplications =
-  async () => {
+const fetchApplications = async () => {
 
-    try {
+  try {
 
-      const token =
-        localStorage.getItem(
-          "token"
-        );
+    const token = localStorage.getItem("token");
 
-      const data =
-        await getMyApplications(
-          token
-        );
+    const data = await getMyApplications(token);
 
-      setAppliedJobs(data);
+    console.log("========== APPLICATIONS ==========");
+    console.log(data);
 
-    }
+    setAppliedJobs(data);
 
-    catch (error) {
+  }
 
-      console.log(error);
+  catch (error) {
 
-    }
+    console.log(error);
+
+  }
 
 };
+useEffect(() => {
+
+  console.log("STATE APPLIED JOBS");
+  console.log(appliedJobs);
+
+}, [appliedJobs]);
 
 
 
@@ -126,41 +131,45 @@ const [
 ] = useState([]);
 
 
-const fetchAdminApplications =
-  async () => {
+const fetchAdminApplications = async () => {
 
-    try {
+  console.log("========== FETCH ADMIN APPLICATIONS ==========");
 
-      const token =
-        localStorage.getItem(
-          "token"
-        );
+  try {
 
-      const data =
-        await getAllApplications(
-          token
-        );
+    const token = localStorage.getItem("token");
 
-      setAdminApplications(
-        data
-      );
+    console.log("TOKEN:", token);
 
-    }
+    const data = await getAllApplications(token);
 
-    catch (error) {
+    console.log("ADMIN APPLICATIONS:");
+    console.log(data);
 
-      console.log(error);
+    setAdminApplications(data);
 
-    }
+  }
+
+  catch (error) {
+
+    console.log("ADMIN APPLICATION ERROR");
+
+    console.log(error.response?.data);
+
+    console.log(error);
+
+  }
 
 };
-
 useEffect(() => {
 
-  if (
-    currentUser &&
-    role === "admin"
-  ) {
+  console.log("ROLE:", role);
+
+  console.log("CURRENT USER:", currentUser);
+
+  if (currentUser && role === "admin") {
+
+    console.log("CALLING fetchAdminApplications()");
 
     fetchAdminApplications();
 
@@ -222,26 +231,26 @@ useEffect(() => {
 
 }, []);
 
-const fetchJobs =
-  async () => {
+const fetchJobs = async () => {
 
     try {
 
-      const data =
-        await getJobs();
+        const data = await getJobs();
 
-      setJobs(data);
+        console.log("========== FRONTEND JOBS ==========");
+        console.log(data);
+
+        setJobs(data);
 
     }
 
     catch (error) {
 
-      console.log(error);
+        console.log(error);
 
     }
 
 };
-
 /* =========================
    SAVE APPLIED JOBS
 ========================= */
@@ -308,63 +317,29 @@ useEffect(() => {
 }, [notifications]);
 
 
-const handleApply =
-  async (job) => {
+const handleApply = async (job) => {
 
-    try {
+  const token = localStorage.getItem("token");
 
-      const token =
-        localStorage.getItem(
-          "token"
-        );
+  try {
 
-      await applyJob(
-        job._id,
-        token
-      );
+    const response = await applyJob(job._id, token);
 
-      alert(
-        "Applied Successfully"
-      );
+    console.log(response);
 
-      fetchApplications();
+    await fetchApplications();   // <-- Refresh tracker
 
-      setNotifications((prev) => [
+    setActivePage("tracker");    // optional
 
-        {
+  }
 
-          id: Date.now(),
+  catch (err) {
 
-          message:
-            `Applied to ${job.company}`,
+    console.log(err.response?.data);
 
-          read: false
-
-        },
-
-        ...prev
-
-      ]);
-
-    }
-
-    catch (error) {
-
-      console.log(error);
-
-      alert(
-
-        error.response?.data
-          ?.message ||
-
-        "Application Failed"
-
-      );
-
-    }
+  }
 
 };
-
   /* =========================
      SAVE JOB
   ========================= */
@@ -374,7 +349,7 @@ const handleApply =
     setSavedJobs((prev) => {
 
       const exists = prev.find(
-        (j) => j.id === job.id
+        (j) => j.id === job._id
       );
 
       if (exists) return prev;
@@ -388,44 +363,34 @@ const handleApply =
   /* =========================
      UPDATE JOB STATUS
   ========================= */
-const updateJobStatus = (
-  id,
-  newStatus
-) => {
+const updateJobStatus = async (applicationId, newStatus) => {
 
-  setNotifications((prev) => [
+  try {
 
-    {
+    console.log("Updating:", applicationId, newStatus);
 
-      id: Date.now(),
+    const token = localStorage.getItem("token");
 
-      message:
-        `Application moved to ${newStatus}`,
+    const response = await updateStatus(
+      applicationId,
+      newStatus,
+      token
+    );
 
-      read: false
+    console.log(response);
 
-    },
+    await fetchApplications();
 
-    ...prev
+    await fetchAdminApplications();
 
-  ]);
+  }
 
-  setAppliedJobs((prev) =>
+  catch (error) {
 
-    prev.map((job) =>
+    console.log(error.response?.data);
+    console.log(error);
 
-      job._id === id
-
-        ? {
-            ...job,
-            status: newStatus
-          }
-
-        : job
-
-    )
-
-  );
+  }
 
 };
   /* =========================
@@ -535,19 +500,17 @@ const updateJobStatus = (
 
               <TrackerPage
 
-               jobs={appliedJobs.map(
-  (app) => ({
+             jobs={appliedJobs.map((app) => ({
 
-    ...app.job,
+  ...app.job,
 
-    status: app.status,
+  _id: app._id,
 
-    appliedDate:
-      app.appliedDate
+  status: app.status,
 
-  })
-)}
+  appliedDate: app.appliedDate
 
+}))}
                 updateJobStatus={
                   updateJobStatus
                 }
@@ -605,7 +568,7 @@ const updateJobStatus = (
 
                         <div
                           className="job-box"
-                          key={job.id}
+                          key={job._id}
                         >
 
                           <h3>
@@ -615,7 +578,7 @@ const updateJobStatus = (
                           </h3>
 
                           <p>
-                            {job.role}
+                            {job.title}
                           </p>
 
                         </div>
@@ -696,7 +659,7 @@ const updateJobStatus = (
               "admin-dashboard" && (
 
               <AdminDashboard
-              jobs={appliedJobs}
+              jobs={adminApplications}
 
                 savedJobs={
                   savedJobs

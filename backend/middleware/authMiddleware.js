@@ -1,115 +1,67 @@
-const jwt =
-  require("jsonwebtoken");
 
-/* PROTECT ROUTE */
-const protect = (
+const jwt = require("jsonwebtoken");
 
-  req,
-  res,
-  next
-
-) => {
-
-  try {
-
-    let token;
-
-    /* CHECK TOKEN */
-    if (
-
-      req.headers.authorization &&
-
-      req.headers.authorization.startsWith(
-        "Bearer"
-      )
-
-    ) {
-
-      token =
-        req.headers.authorization
-          .split(" ")[1];
-
-      /* VERIFY TOKEN */
-      const decoded =
-        jwt.verify(
-
-          token,
-
-          process.env.JWT_SECRET
-
-        );
-
-      req.user = decoded;
-
-      next();
-
-    }
-
-    else {
-
-      return res.status(401)
-        .json({
-
-          message:
-            "Not authorized"
-
-        });
-
-    }
-
-  }
-
-  catch (error) {
-
-    return res.status(401)
-      .json({
-
-        message:
-          "Token failed"
-
-      });
-
-  }
-
-};
-
-/* ADMIN ONLY */
-const adminOnly = (
-
-  req,
-  res,
-  next
-
-) => {
+const protect = (req, res, next) => {
+  const authHeader = req.headers.authorization;
 
   if (
-
-    req.user &&
-    req.user.role === "admin"
-
+    !authHeader ||
+    !authHeader.startsWith("Bearer ")
   ) {
-
-    next();
-
+    return res.status(401).json({
+      message: "Not authorized, token missing",
+    });
   }
 
-  else {
+  if (!process.env.JWT_SECRET) {
+    console.error("JWT_SECRET is not configured");
 
-    return res.status(403)
-      .json({
+    return res.status(500).json({
+      message: "Authentication service is not configured",
+    });
+  }
 
-        message:
-          "Admin access only"
+  const token = authHeader.slice(7).trim();
 
+  if (!token) {
+    return res.status(401).json({
+      message: "Not authorized, token missing",
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET
+    );
+
+    if (!decoded.id || !decoded.role) {
+      return res.status(401).json({
+        message: "Invalid token",
       });
+    }
 
+    req.user = decoded;
+
+    return next();
+  } catch (error) {
+    return res.status(401).json({
+      message: "Invalid or expired token",
+    });
+  }
+};
+
+const adminOnly = (req, res, next) => {
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({
+      message: "Admin access only",
+    });
   }
 
+  return next();
 };
 
 module.exports = {
-
   protect,
-  adminOnly
-
+  adminOnly,
 };

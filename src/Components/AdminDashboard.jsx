@@ -1,5 +1,8 @@
 import "./AdminDashboard.css";
-
+import {
+  updateStatus
+}
+from "../services/applicationService";
 const AdminDashboard = ({
   jobs,
   savedJobs,
@@ -73,30 +76,36 @@ const AdminDashboard = ({
 
         <div className="recent-list">
 
-          {jobs.map((job) => (
+          {jobs.map((application) => (
 
-            <div
-              className="recent-item"
-              key={job.id}
-            >
+  <div
+    className="recent-item"
+    key={application._id}
+  >
 
-              <div>
+    <div>
 
-                <strong>
-                  {job.company}
-                </strong>
+      <strong>
+        {application.job?.company}
+      </strong>
 
-                <p>{job.role}</p>
+      <p>
+        {application.job?.title}
+      </p>
 
-              </div>
+      <small>
+        {application.user?.name}
+      </small>
 
-              <span>
-                {job.status}
-              </span>
+    </div>
 
-            </div>
+    <span>
+      {application.status}
+    </span>
 
-          ))}
+  </div>
+
+))}
 
         </div>
 

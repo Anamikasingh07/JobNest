@@ -38,7 +38,7 @@ const Column = ({
       {jobs.map((job) => (
 
         <JobCard
-          key={job.id}
+          key={job._id}
           job={job}
           updateJobStatus={updateJobStatus}
         />

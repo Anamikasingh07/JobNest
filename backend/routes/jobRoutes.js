@@ -1,47 +1,18 @@
-const express =
-  require("express");
 
-const router =
-  express.Router();
+const express = require("express");
+const router = express.Router();
 
 const {
-
   createJob,
-  getJobs
-
-} = require(
-  "../controllers/jobController"
-);
+  getJobs,
+} = require("../controllers/jobController");
 
 const {
-
-  protect,
-  adminOnly
-
-} = require(
-  "../middleware/authMiddleware"
-);
-
-/* CREATE JOB */
-router.post(
-
-  "/",
-
   protect,
   adminOnly,
+} = require("../middleware/authMiddleware");
 
-  createJob
+router.post("/", protect, adminOnly, createJob);
+router.get("/", getJobs);
 
-);
-
-/* GET JOBS */
-router.get(
-
-  "/",
-
-  getJobs
-
-);
-
-module.exports =
-  router;
+module.exports = router;

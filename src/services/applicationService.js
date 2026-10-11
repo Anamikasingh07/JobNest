@@ -56,6 +56,36 @@ export const getMyApplications =
     return response.data;
 
 };
+/* UPDATE STATUS */
+export const updateStatus =
+  async (
+    applicationId,
+    status,
+    token
+  ) => {
+
+    const response =
+      await axios.put(
+
+        `${API}/status`,
+
+        {
+          applicationId,
+          status
+        },
+
+        {
+          headers: {
+            Authorization:
+              `Bearer ${token}`
+          }
+        }
+
+      );
+
+    return response.data;
+
+};
 
 /* GET ALL APPLICATIONS */
 export const getAllApplications =

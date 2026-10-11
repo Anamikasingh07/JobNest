@@ -21,7 +21,7 @@ const Joblist = ({ jobs, onApply }) => {
 
       ||
 
-      job.role
+      job.title
         .toLowerCase()
         .includes(search.toLowerCase());
 
@@ -67,11 +67,11 @@ const Joblist = ({ jobs, onApply }) => {
 
         {filteredJobs.map((job) => (
 
-          <div className="job-box" key={job.id}>
+          <div className="job-box" key={job._id}>
 
             <h3>{job.company}</h3>
 
-            <p>{job.role}</p>
+            <p>{job.title}</p>
 
             <span className="job-tag">
               {job.category}

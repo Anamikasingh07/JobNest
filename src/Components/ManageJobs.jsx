@@ -1,6 +1,6 @@
 import "./ManageJobs.css";
 import { useState } from "react";
-
+import { createJob } from "../services/jobService";
 const ManageJobs = ({
   availableJobs,
   setAvailableJobs
@@ -17,45 +17,59 @@ const ManageJobs = ({
     });
 
   /* ADD JOB */
-  const handleAddJob = () => {
+ const handleAddJob = async () => {
 
-    if (
-      !formData.company ||
-      !formData.role
-    ) {
-      return;
+    if (!formData.company || !formData.role) {
+
+        alert("Fill all required fields");
+        return;
+
     }
 
-    const newJob = {
+    try {
 
-      id: Date.now().toString(),
+        const token = localStorage.getItem("token");
 
-      ...formData,
+        const newJob = {
 
-      salary: "$100k+",
+            title: formData.role,
+            company: formData.company,
+            location: formData.location,
+            salary: "$100k+",
+            description: formData.category,
+            skills: "React"
 
-      type: "Full-time",
+        };
 
-      description:
-        "New job opportunity."
+        const response = await createJob(newJob, token);
 
-    };
+        setAvailableJobs(prev => [
 
-    setAvailableJobs((prev) => [
-      ...prev,
-      newJob
-    ]);
+            response.job,
+            ...prev
 
-    setFormData({
+        ]);
 
-      company: "",
-      role: "",
-      category: "",
-      location: ""
+        setFormData({
 
-    });
+            company: "",
+            role: "",
+            category: "",
+            location: ""
 
-  };
+        });
+
+        alert("Job Added");
+
+    }
+
+    catch(err){
+
+        console.log(err);
+
+    }
+
+};
 
   /* DELETE */
   const handleDelete = (id) => {
@@ -63,7 +77,7 @@ const ManageJobs = ({
     setAvailableJobs((prev) =>
 
       prev.filter(
-        (job) => job.id !== id
+        (job) => job._id !== id
       )
 
     );
@@ -166,12 +180,12 @@ const ManageJobs = ({
 
           <div
             className="admin-job-card"
-            key={job.id}
+            key={job._id}
           >
 
             <h3>{job.company}</h3>
 
-            <p>{job.role}</p>
+            <p>{job.title}</p>
 
             <span>
               {job.category}
@@ -179,7 +193,7 @@ const ManageJobs = ({
 
             <button
               onClick={() =>
-                handleDelete(job.id)
+                handleDelete(job._id)
               }
             >
               Delete

@@ -1,15 +1,13 @@
 import "./Jobcard.css";
 
-const JobCard = ({
-  job,
-  updateJobStatus
-}) => {
+const JobCard = ({ job, updateJobStatus }) => {
+
+  const status = job.status || "Applied";
+  const priority = job.priority || "Medium";
 
   return (
 
-    <div
-      className={`job-card ${job.status.toLowerCase()}-card`}
-    >
+    <div className={`job-card ${status.toLowerCase()}-card`}>
 
       {/* TOP */}
       <div className="job-top">
@@ -18,48 +16,35 @@ const JobCard = ({
 
           <h4>{job.company}</h4>
 
-          <p>{job.role}</p>
+          <p>{job.title}</p>
 
         </div>
 
-        <span
-          className={`priority ${job.priority.toLowerCase()}`}
-        >
-          {job.priority}
+        <span className={`priority ${priority.toLowerCase()}`}>
+          {priority}
         </span>
 
       </div>
 
       {/* DATE */}
       <div className="job-info">
-
-        📅 Applied:
-        {" "}
-        {job.appliedDate}
-
+        📅 Applied: {job.appliedDate || "Today"}
       </div>
 
-      {/* NOTES */}
+      {/* DESCRIPTION */}
       <div className="job-notes">
-
-        📝
-        {" "}
-        {job.notes || "No notes added"}
-
+        📝 {job.description || "No description"}
       </div>
 
       {/* BUTTONS */}
       <div className="tracker-buttons">
 
-        {job.status !== "Interview" && (
+        {status !== "Interview" && (
 
           <button
             className="interview-btn"
             onClick={() =>
-              updateJobStatus(
-                job.id,
-                "Interview"
-              )
+              updateJobStatus(job._id, "Interview")
             }
           >
             Interview
@@ -67,15 +52,12 @@ const JobCard = ({
 
         )}
 
-        {job.status !== "Rejected" && (
+        {status !== "Rejected" && (
 
           <button
             className="reject-btn"
             onClick={() =>
-              updateJobStatus(
-                job.id,
-                "Rejected"
-              )
+              updateJobStatus(job._id, "Rejected")
             }
           >
             Reject
@@ -86,7 +68,9 @@ const JobCard = ({
       </div>
 
     </div>
+
   );
+
 };
 
 export default JobCard;
