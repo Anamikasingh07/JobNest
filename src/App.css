@@ -1,68 +1,11 @@
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #0d0f12;
 }
 
-body{
-  font-family:Arial, Helvetica, sans-serif;
-
-  background:
-  linear-gradient(
-    135deg,
-    #f5f3ff,
-    #ffffff
-  );
-
-  color:#111827;
-
-  overflow-x:hidden;
-}
-
-.app{
-  min-height:100vh;
-}
-
-/* MAIN */
-.content{
-
-  display:flex;
-
-  gap:20px;
-
-  padding:20px;
-
-  align-items:flex-start;
-}
-
-/* MAIN CONTENT */
-.main-content{
-
-  flex:1;
-
-  width:100%;
-
-  background:white;
-
-  border-radius:24px;
-
-  padding:24px;
-
-  min-height:
-  calc(100vh - 110px);
-
-  box-shadow:
-  0 8px 30px rgba(124,58,237,0.08);
-}
-
-/* =========================
-   TABLET
-========================= */
-
-@media(max-width:992px){
-
-  .content{
-    flex-direction:column;
-  }
-
+.main-content {
+  flex: 1;
+  width: 100%;
 }

@@ -1,78 +1,45 @@
+const Job = require('../models/Job');
+const Application = require('../models/Application');
 
-const Job = require("../models/Job");
-
-const createJob = async (req, res) => {
+exports.getJobs = async (req, res) => {
   try {
-    const {
-      title,
-      company,
-      location,
-      salary,
-      description,
-      skills,
-    } = req.body || {};
+    const { q, location, type, minSalary, workStyle, page = 1, limit = 10 } = req.query;
+    const filter = { isOpen: true };
 
-    if (
-      typeof title !== "string" || !title.trim() ||
-      typeof company !== "string" || !company.trim() ||
-      typeof location !== "string" || !location.trim() ||
-      typeof description !== "string" || !description.trim()
-    ) {
-      return res.status(400).json({
-        message: "Title, company, location, and description are required",
-      });
+    if (q) {
+      filter.$text = { $search: q };
+    }
+    if (location) {
+      filter.location = { $regex: location, $options: 'i' };
+    }
+    if (type) {
+      filter.jobType = type;
+    }
+    if (workStyle) {
+      filter.workStyle = workStyle;
+    }
+    if (minSalary) {
+      filter.salaryMin = { $gte: Number(minSalary) };
     }
 
-    if (
-      skills !== undefined &&
-      (!Array.isArray(skills) ||
-        !skills.every((skill) => typeof skill === "string"))
-    ) {
-      return res.status(400).json({
-        message: "Skills must be an array of strings",
-      });
-    }
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const skip = (pageNum - 1) * limitNum;
 
-    const job = await Job.create({
-      title: title.trim(),
-      company: company.trim(),
-      location: location.trim(),
-      salary,
-      description: description.trim(),
-      skills: skills || [],
-      createdBy: req.user.id,
-    });
+    const [jobs, total] = await Promise.all([
+      Job.find(filter).skip(skip).limit(limitNum).sort({ createdAt: -1 }),
+      Job.countDocuments(filter)
+    ]);
 
-    return res.status(201).json({
-      message: "Job created successfully",
-      job,
+    res.json({
+      jobs,
+      pagination: {
+        total,
+        page: pageNum,
+        pages: Math.ceil(total / limitNum)
+      }
     });
-  } catch (error) {
-    console.error("Create job error:", error.message);
-
-    return res.status(500).json({
-      message: "Server Error",
-    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-};
-
-const getJobs = async (req, res) => {
-  try {
-    const jobs = await Job.find().sort({
-      createdAt: -1,
-    });
-
-    return res.status(200).json(jobs);
-  } catch (error) {
-    console.error("Get jobs error:", error.message);
-
-    return res.status(500).json({
-      message: "Server Error",
-    });
-  }
-};
-
-module.exports = {
-  createJob,
-  getJobs,
 };

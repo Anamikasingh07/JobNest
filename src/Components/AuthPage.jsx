@@ -1,298 +1,156 @@
-import "./AuthPage.css";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './AuthPage.css';
 
-import { useState } from "react";
+const AuthPage = () => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [role, setRole] = useState('jobseeker'); // 'jobseeker' | 'employer'
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const navigate = useNavigate();
 
-import {
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-  registerUser,
-  loginUser
+    if (!email || !password) return;
 
-} from "../services/authService";
+    // Check if user account already exists in mock/local database
+    const existingUsers = JSON.parse(localStorage.getItem('registered_users') || '[]');
+    let userAccount = existingUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
 
-const AuthPage = ({
+    if (isLogin) {
+      if (!userAccount) {
+        // Fallback for new email login
+        userAccount = {
+          name: email.split('@')[0],
+          email: email,
+          role: role
+        };
+      }
+    } else {
+      // Register logic: lock email to selected role permanently
+      userAccount = {
+        name: name || email.split('@')[0],
+        email: email,
+        role: role
+      };
 
-  setCurrentUser,
-  setRole
+      const updatedUsers = [...existingUsers.filter((u) => u.email !== email), userAccount];
+      localStorage.setItem('registered_users', JSON.stringify(updatedUsers));
+    }
 
-}) => {
+    // Save active session
+    localStorage.setItem('currentUser', JSON.stringify(userAccount));
+    localStorage.setItem('token', 'mock_jwt_token_123');
 
-  const [isLogin, setIsLogin] =
-    useState(true);
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [formData, setFormData] =
-    useState({
-
-      name: "",
-      email: "",
-      password: "",
-      role: "user"
-
-    });
-
-  /* HANDLE CHANGE */
-  const handleChange = (e) => {
-
-    setFormData({
-
-      ...formData,
-
-      [e.target.name]:
-        e.target.value
-
-    });
-
+    // Route based on registered role
+    if (userAccount.role === 'employer') {
+      navigate('/admin/manage');
+    } else {
+      navigate('/tracker');
+    }
   };
 
-  /* SUBMIT */
-  const handleSubmit =
-    async () => {
-
-      try {
-
-        setLoading(true);
-
-        /* LOGIN */
-        if (isLogin) {
-
-          const data =
-            await loginUser({
-
-              email:
-                formData.email,
-
-              password:
-                formData.password
-
-            });
-
-          /* SAVE TOKEN */
-          localStorage.setItem(
-
-            "token",
-            data.token
-
-          );
-
-          /* SAVE USER */
-          localStorage.setItem(
-
-            "currentUser",
-
-            JSON.stringify(
-              data.user
-            )
-
-          );
-
-          setCurrentUser(
-            data.user
-          );
-
-          setRole(
-            data.user.role
-          );
-
-          alert(
-            "Login successful"
-          );
-
-        }
-
-        /* REGISTER */
-        else {
-
-          const data =
-            await registerUser(
-              formData
-            );
-
-          alert(
-            data.message
-          );
-
-          /* AUTO LOGIN AFTER REGISTER */
-
-          const loginData =
-            await loginUser({
-
-              email:
-                formData.email,
-
-              password:
-                formData.password
-
-            });
-
-          localStorage.setItem(
-
-            "token",
-            loginData.token
-
-          );
-
-          localStorage.setItem(
-
-            "currentUser",
-
-            JSON.stringify(
-              loginData.user
-            )
-
-          );
-
-          setCurrentUser(
-            loginData.user
-          );
-
-          setRole(
-            loginData.user.role
-          );
-
-        }
-
-      }
-
-      catch (error) {
-
-        console.log(error);
-
-        alert(
-
-          error.response?.data
-            ?.message ||
-
-          "Something went wrong"
-
-        );
-
-      }
-
-      finally {
-
-        setLoading(false);
-
-      }
-
-    };
-
   return (
-
-    <div className="auth-page">
-
-      <div className="auth-box">
-
-        <h2>
-
+    <div className="auth-page-container">
+      <div className="auth-card-box">
+        <h2>{isLogin ? 'Sign In to JobNest' : 'Create Account'}</h2>
+        <p className="auth-subtitle">
           {isLogin
-            ? "Login"
-            : "Create Account"}
-
-        </h2>
-
-        {/* NAME */}
-        {!isLogin && (
-
-          <input
-            type="text"
-            name="name"
-            placeholder="Name"
-
-            value={formData.name}
-
-            onChange={handleChange}
-          />
-
-        )}
-
-        {/* EMAIL */}
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-
-          value={formData.email}
-
-          onChange={handleChange}
-        />
-
-        {/* PASSWORD */}
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-
-          value={formData.password}
-
-          onChange={handleChange}
-        />
-
-        {/* ROLE */}
-        {!isLogin && (
-
-          <select
-            name="role"
-
-            value={formData.role}
-
-            onChange={handleChange}
-          >
-
-            <option value="user">
-              User
-            </option>
-
-            <option value="admin">
-              Admin
-            </option>
-
-          </select>
-
-        )}
-
-        {/* BUTTON */}
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-        >
-
-          {loading
-            ? "Please wait..."
-            : isLogin
-            ? "Login"
-            : "Register"}
-
-        </button>
-
-        {/* TOGGLE */}
-        <p>
-
-          {isLogin
-            ? "Don't have an account?"
-            : "Already have account?"}
-
-          <span
-            onClick={() =>
-              setIsLogin(!isLogin)
-            }
-          >
-
-            {isLogin
-              ? " Register"
-              : " Login"}
-
-          </span>
-
+            ? 'Enter your credentials to access your portal'
+            : 'Register to find jobs or hire top candidates'}
         </p>
 
+        <form onSubmit={handleSubmit}>
+          {!isLogin && (
+            <div className="auth-form-group">
+              <label>Full Name</label>
+              <input
+                type="text"
+                placeholder="e.g. Anamika Singh"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+          )}
+
+          <div className="auth-form-group">
+            <label>Email Address</label>
+            <input
+              type="email"
+              placeholder="user@company.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="auth-form-group">
+            <label>Password</label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          {!isLogin && (
+            <div className="auth-form-group">
+              <label>Register As</label>
+              <div className="role-radio-group">
+                <label className={`radio-tile ${role === 'jobseeker' ? 'active' : ''}`}>
+                  <input
+                    type="radio"
+                    name="role"
+                    value="jobseeker"
+                    checked={role === 'jobseeker'}
+                    onChange={() => setRole('jobseeker')}
+                  />
+                  <span>Candidate (Job Seeker)</span>
+                </label>
+                <label className={`radio-tile ${role === 'employer' ? 'active' : ''}`}>
+                  <input
+                    type="radio"
+                    name="role"
+                    value="employer"
+                    checked={role === 'employer'}
+                    onChange={() => setRole('employer')}
+                  />
+                  <span>Recruiter (Employer)</span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          <button type="submit" className="btn-auth-submit">
+            {isLogin ? 'Log In' : 'Register Account'}
+          </button>
+        </form>
+
+        <div className="auth-toggle-footer">
+          {isLogin ? (
+            <p>
+              Don't have an account?{' '}
+              <button type="button" className="btn-link" onClick={() => setIsLogin(false)}>
+                Register
+              </button>
+            </p>
+          ) : (
+            <p>
+              Already registered?{' '}
+              <button type="button" className="btn-link" onClick={() => setIsLogin(true)}>
+                Log In
+              </button>
+            </p>
+          )}
+        </div>
       </div>
-
     </div>
-
   );
-
 };
 
 export default AuthPage;

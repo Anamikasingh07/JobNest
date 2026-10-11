@@ -1,70 +1,220 @@
-.tracker-page{
-  width:100%;
+.dark-tracker-container {
+  background-color: #0d0f12;
+  color: #f3f4f6;
+  min-height: 100vh;
+  padding: 32px 40px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* HEADER */
-.tracker-header{
-  margin-bottom:28px;
+/* Header */
+.tracker-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
 }
 
-.tracker-header h2{
-  font-size:30px;
-  margin-bottom:8px;
+.tracker-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
 }
 
-/* STATS */
-.tracker-stats{
-
-  display:grid;
-
-  grid-template-columns:
-  repeat(auto-fit,minmax(220px,1fr));
-
-  gap:18px;
-
-  margin-bottom:28px;
+.tracker-subtitle {
+  color: #9ca3af;
+  font-size: 14px;
+  margin-top: 4px;
 }
 
-.stat-card{
-
-  background:white;
-
-  padding:22px;
-
-  border-radius:22px;
-
-  border:
-  1px solid #ede9fe;
-
-  box-shadow:
-  0 8px 30px rgba(124,58,237,0.08);
+.top-bar-actions {
+  display: flex;
+  gap: 12px;
 }
 
-.stat-card h3{
-
-  font-size:30px;
-
-  color:#7c3aed;
-
-  margin-bottom:10px;
+.btn-outline {
+  background: transparent;
+  border: 1px solid #374151;
+  color: #e5e7eb;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-/* COLUMNS */
-.tracker-columns{
-
-  display:grid;
-
-  grid-template-columns:
-  repeat(auto-fit,minmax(300px,1fr));
-
-  gap:20px;
+.btn-primary-blue {
+  background-color: #2563eb;
+  border: none;
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-/* MOBILE */
-@media(max-width:600px){
+/* Metrics Grid */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr) 1.5fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
 
-  .tracker-columns{
-    grid-template-columns:1fr;
-  }
+.metric-card {
+  background-color: #16191e;
+  border: 1px solid #272a30;
+  border-radius: 12px;
+  padding: 18px 24px;
+  display: flex;
+  flex-direction: column;
+}
 
+.metric-label {
+  color: #9ca3af;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.highlight-card {
+  background-color: #21190e;
+  border-color: #453213;
+}
+
+.gold-text {
+  color: #fbbf24 !important;
+}
+
+.metric-value-lg {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+/* Filter bar */
+.filter-controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.search-input-wrapper {
+  background-color: #16191e;
+  border: 1px solid #272a30;
+  border-radius: 8px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 480px;
+}
+
+.search-input-wrapper input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  outline: none;
+  margin-left: 10px;
+  width: 100%;
+}
+
+.pill-filters {
+  display: flex;
+  gap: 8px;
+}
+
+.pill-btn {
+  background: #16191e;
+  border: 1px solid #272a30;
+  color: #9ca3af;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.pill-btn.active {
+  background-color: #1d4ed8;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+/* Kanban Board */
+.tracker-kanban-board {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+/* Modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-card {
+  background-color: #16191e;
+  border: 1px solid #272a30;
+  border-radius: 12px;
+  padding: 28px;
+  width: 440px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 6px;
+}
+
+.form-group input {
+  background: #0d0f12;
+  border: 1px solid #272a30;
+  color: #fff;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.modal-actions-btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn-cancel {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.btn-save {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  cursor: pointer;
 }

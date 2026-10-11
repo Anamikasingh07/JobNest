@@ -1,105 +1,98 @@
-.job-card{
-
-  background:white;
-
-  border-radius:22px;
-
-  padding:18px;
-
-  margin-bottom:18px;
-
-  box-shadow:
-  0 6px 18px rgba(0,0,0,0.05);
+.dark-job-card {
+  background-color: #16191e;
+  border: 1px solid #272a30;
+  border-radius: 10px;
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color 0.2s;
 }
 
-/* TOP */
-.job-top{
-
-  display:flex;
-
-  justify-content:space-between;
-
-  margin-bottom:14px;
+.dark-job-card.selected {
+  border: 2px solid #2563eb;
+  background-color: #121a29;
 }
 
-.job-top h4{
-  margin-bottom:4px;
+.card-top-group {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  position: relative;
 }
 
-/* PRIORITY */
-.priority{
-
-  padding:6px 12px;
-
-  border-radius:12px;
-
-  font-size:12px;
-
-  font-weight:600;
+.card-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
 }
 
-.high{
-  background:#fee2e2;
-  color:#dc2626;
+.card-job-title {
+  font-size: 15px;
+  margin: 0 0 2px;
+  color: #ffffff;
 }
 
-.medium{
-  background:#fef3c7;
-  color:#d97706;
+.card-company-name {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 0;
 }
 
-.low{
-  background:#dcfce7;
-  color:#16a34a;
+.btn-bookmark {
+  position: absolute;
+  right: 0;
+  top: 0;
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
 }
 
-/* INFO */
-.job-info,
-.job-notes{
-
-  margin-bottom:12px;
-
-  color:#6b7280;
-
-  font-size:14px;
+.card-salary {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f3f4f6;
+  margin: 10px 0;
 }
 
-/* BUTTONS */
-.tracker-buttons{
-
-  display:flex;
-
-  gap:10px;
-
-  margin-top:14px;
+.card-pills-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
-.interview-btn,
-.reject-btn{
-
-  flex:1;
-
-  border:none;
-
-  padding:10px;
-
-  border-radius:12px;
-
-  cursor:pointer;
-
-  font-weight:600;
+.pill-gray {
+  background-color: #272a30;
+  color: #d1d5db;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
-.interview-btn{
-
-  background:#ede9fe;
-
-  color:#7c3aed;
+.pill-match.high {
+  background-color: #064e3b;
+  color: #34d399;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
 }
 
-.reject-btn{
+.pill-match.medium {
+  background-color: #451a03;
+  color: #fbbf24;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
 
-  background:#fee2e2;
-
-  color:#dc2626;
+.card-footer-ago {
+  font-size: 11px;
+  color: #6b7280;
 }

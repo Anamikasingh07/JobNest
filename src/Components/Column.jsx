@@ -1,50 +1,80 @@
-import JobCard from "./Jobcard";
-import "./Column.css";
+import React from 'react';
+import './Column.css';
 
-const Column = ({
-  title,
-  jobs,
-  updateJobStatus
-}) => {
-
-  let columnClass = "column";
-
-  if (title === "Applied") {
-    columnClass += " applied-column";
-  }
-
-  else if (title === "Interview") {
-    columnClass += " interview-column";
-  }
-
-  else if (title === "Rejected") {
-    columnClass += " rejected-column";
-  }
+const Column = ({ stage, applications = [], onStatusChange }) => {
+  const safeApps = Array.isArray(applications) ? applications : [];
 
   return (
-
-    <div className={columnClass}>
-
+    <div className="kanban-column">
       <div className="column-header">
-
-        <h3>{title}</h3>
-
-        <span className="job-count">
-          {jobs.length}
-        </span>
-
+        <div className="header-title-group">
+          <span className="column-dot"></span>
+          <h3 className="column-title">{stage.title}</h3>
+        </div>
+        <span className="column-badge">{safeApps.length}</span>
       </div>
 
-      {jobs.map((job) => (
+      <div className="column-body">
+        {safeApps.length === 0 ? (
+          <div className="empty-dropzone">
+            <p>{stage.emptyText}</p>
+          </div>
+        ) : (
+          safeApps.map((app) => (
+            <div key={app.id} className="app-card">
+              <div className="card-header-row">
+                <div
+                  className="company-logo"
+                  style={{ backgroundColor: app.logoBg || '#374151' }}
+                >
+                  {app.logoLetter || app.companyName?.charAt(0)}
+                </div>
+                <div className="title-block">
+                  <h4 className="job-role">{app.jobTitle}</h4>
+                  <p className="company-title">{app.companyName}</p>
+                </div>
+              </div>
 
-        <JobCard
-          key={job._id}
-          job={job}
-          updateJobStatus={updateJobStatus}
-        />
+              <div className="card-details">
+                {app.location && (
+                  <p className="detail-line">
+                    📍 {app.location} {app.workStyle ? `· ${app.workStyle}` : ''}
+                  </p>
+                )}
+                {app.salary && <p className="detail-line">🏷️ {app.salary}</p>}
+              </div>
 
-      ))}
+              <div className="card-tags-row">
+                <span className={`pill-tag source-${app.source?.toLowerCase()}`}>
+                  {app.source}
+                </span>
+                {app.badgeText && (
+                  <span className={`pill-tag badge-${app.badgeType || 'default'}`}>
+                    {app.badgeText}
+                  </span>
+                )}
+              </div>
 
+              <div className="card-footer">
+                <span className="applied-ago">
+                  🕒 Applied {app.appliedDaysAgo} days ago
+                </span>
+                <select
+                  className="status-dropdown"
+                  value={app.status}
+                  onChange={(e) => onStatusChange(app.id, e.target.value)}
+                >
+                  <option value="Wishlist">Wishlist</option>
+                  <option value="Applied">Applied</option>
+                  <option value="Interview">Interview</option>
+                  <option value="Offer">Offer</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 };
