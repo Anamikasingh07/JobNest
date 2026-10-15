@@ -1,167 +1,54 @@
-import { useState } from "react";
-import "./Profile.css";
+// Add this role-check block inside src/Components/ProfilePage.jsx
+const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
 
-const Profile = () => {
-
-  const [isEditing, setIsEditing] = useState(false);
-
-  const [profile, setProfile] = useState({
-    name: "Anamika Singh",
-    role: "Frontend Developer",
-    email: "anamika@gmail.com",
-    about:
-      "Passionate frontend developer focused on building modern UI.",
-    skills: "React, JavaScript, CSS, UI/UX"
-  });
-
-  // handle input changes
-  const handleChange = (e) => {
-
-    setProfile({
-      ...profile,
-      [e.target.name]: e.target.value
-    });
-  };
-
+if (currentUser.role === 'employer') {
   return (
-
-    <div className="profile-page">
-
-      <div className="profile-card">
-
-        {/* TOP */}
-        <div className="profile-top">
-
-          <div className="profile-avatar">
-            {profile.name[0]}
+    <div className="dark-profile-container">
+      <div className="profile-card hero-card">
+        <div className="profile-hero-left">
+          <div className="profile-hero-avatar recruiter-bg">R</div>
+          <div className="profile-hero-info">
+            <h1 className="profile-name">Recruiter Control Center</h1>
+            <p className="profile-headline">Talent Acquisition Manager · JobNest Hiring</p>
+            <p className="profile-meta">📍 Bengaluru, India · ✉️ recruiter@jobnest.com</p>
           </div>
-
-          <div>
-
-            {isEditing ? (
-
-              <input
-                type="text"
-                name="name"
-                value={profile.name}
-                onChange={handleChange}
-              />
-
-            ) : (
-
-              <h2>{profile.name}</h2>
-
-            )}
-
-            {isEditing ? (
-
-              <input
-                type="text"
-                name="role"
-                value={profile.role}
-                onChange={handleChange}
-              />
-
-            ) : (
-
-              <p>{profile.role}</p>
-
-            )}
-
-          </div>
-
         </div>
-
-        {/* EMAIL */}
-        <div className="profile-section">
-
-          <h3>📧 Email</h3>
-
-          {isEditing ? (
-
-            <input
-              type="email"
-              name="email"
-              value={profile.email}
-              onChange={handleChange}
-            />
-
-          ) : (
-
-            <p>{profile.email}</p>
-
-          )}
-
-        </div>
-
-        {/* SKILLS */}
-        <div className="profile-section">
-
-          <h3>🛠 Skills</h3>
-
-          {isEditing ? (
-
-            <textarea
-              name="skills"
-              value={profile.skills}
-              onChange={handleChange}
-            />
-
-          ) : (
-
-            <div className="skills">
-
-              {profile.skills
-                .split(",")
-                .map((skill, index) => (
-
-                  <span key={index}>
-                    {skill.trim()}
-                  </span>
-
-              ))}
-
-            </div>
-
-          )}
-
-        </div>
-
-        {/* ABOUT */}
-        <div className="profile-section">
-
-          <h3>📝 About</h3>
-
-          {isEditing ? (
-
-            <textarea
-              name="about"
-              value={profile.about}
-              onChange={handleChange}
-            />
-
-          ) : (
-
-            <p>{profile.about}</p>
-
-          )}
-
-        </div>
-
-        {/* BUTTON */}
-        <button
-          className="edit-btn"
-          onClick={() => setIsEditing(!isEditing)}
-        >
-
-          {isEditing ? "Save Profile" : "Edit Profile"}
-
-        </button>
-
       </div>
 
+      <div className="profile-grid">
+        <div className="profile-column">
+          <div className="profile-card">
+            <h3>Company Information</h3>
+            <p className="about-text">
+              JobNest Technology Solutions — Building next-generation hiring systems and developer tools.
+            </p>
+          </div>
+
+          <div className="profile-card">
+            <h3>Active Postings Overview</h3>
+            <div className="kv-rows">
+              <div className="kv-row">
+                <span className="kv-key">Open Positions</span>
+                <span className="kv-val">2 Active Listings</span>
+              </div>
+              <div className="kv-row">
+                <span className="kv-key">Total Applicants Received</span>
+                <span className="kv-val">70 Candidates</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="profile-column">
+          <div className="profile-card">
+            <h3>Account & Access Controls</h3>
+            <div className="account-action-list">
+              <button className="account-btn">Change password ›</button>
+              <button className="account-btn delete-text">Delete recruiter account ›</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
-};
-
-export default Profile;
+}

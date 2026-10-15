@@ -1,72 +1,122 @@
-.admin-applications h2{
-  margin-bottom:25px;
+.dark-manage-jobs-container,
+.dark-admin-apps-container {
+  padding: 32px 40px;
+  background-color: #0d0f12;
+  color: #f3f4f6;
+  min-height: calc(100vh - 64px);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* GRID */
-.applications-grid{
-
-  display:grid;
-
-  grid-template-columns:
-  repeat(auto-fit,minmax(300px,1fr));
-
-  gap:20px;
+.page-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
 }
 
-/* CARD */
-.application-card{
-
-  background:white;
-
-  padding:24px;
-
-  border-radius:24px;
-
-  border:
-  1px solid #ede9fe;
-
-  box-shadow:
-  0 8px 30px rgba(124,58,237,0.08);
+.page-header-flex h1 {
+  font-size: 26px;
+  margin: 0 0 6px;
 }
 
-.application-card h3{
-  margin-bottom:10px;
+.page-header-flex p {
+  color: #9ca3af;
+  margin: 0;
+  font-size: 14px;
 }
 
-.application-card p{
-  margin-bottom:12px;
+.job-listings-table-card,
+.apps-detail-pane {
+  background-color: #16191e;
+  border: 1px solid #272a30;
+  border-radius: 12px;
+  padding: 24px;
 }
 
-.application-card h4{
-
-  margin-bottom:20px;
-
-  color:#7c3aed;
+.recruiter-table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-/* BUTTONS */
-.status-buttons{
-
-  display:flex;
-
-  gap:10px;
-
-  flex-wrap:wrap;
+.recruiter-table th,
+.recruiter-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid #272a30;
 }
 
-.status-buttons button{
+.recruiter-table th {
+  color: #9ca3af;
+  font-size: 13px;
+}
 
-  border:none;
+.applicant-badge {
+  background-color: #1e3a8a;
+  color: #93c5fd;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
 
-  padding:10px 14px;
+.status-tag.open {
+  color: #34d399;
+  font-weight: 700;
+}
 
-  border-radius:12px;
+.status-tag.closed {
+  color: #f87171;
+  font-weight: 700;
+}
 
-  cursor:pointer;
+.actions-cell {
+  display: flex;
+  gap: 8px;
+}
 
-  background:#ede9fe;
+.btn-action-sm {
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
 
-  color:#7c3aed;
+.btn-action-sm.secondary {
+  background-color: #272a30;
+}
 
-  font-weight:600;
+.apps-split-container {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 20px;
+}
+
+.applicant-card {
+  background-color: #16191e;
+  border: 1px solid #272a30;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.applicant-card.active {
+  border-color: #2563eb;
+}
+
+.match-tag {
+  color: #34d399;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.stage-selector-box select {
+  background-color: #0d0f12;
+  color: #ffffff;
+  border: 1px solid #272a30;
+  padding: 8px 12px;
+  border-radius: 6px;
 }
