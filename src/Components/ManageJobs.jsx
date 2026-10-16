@@ -1,201 +1,179 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import API from '../services/applicationService';
 import './ManageJobs.css';
 
-const INITIAL_RECRUITER_JOBS = [
-  {
-    id: '1',
-    title: 'Frontend Developer',
-    location: 'Bengaluru (Hybrid)',
-    type: 'Full-time',
-    salary: '₹18L – ₹24L',
-    applicantCount: 42,
-    status: 'Open',
-    createdAt: '2026-10-01'
-  },
-  {
-    id: '2',
-    title: 'Full Stack Engineer',
-    location: 'Hyderabad (On-site)',
-    type: 'Full-time',
-    salary: '₹22L – ₹30L',
-    applicantCount: 28,
-    status: 'Open',
-    createdAt: '2026-09-28'
-  }
-];
-
 const ManageJobs = () => {
-  const navigate = useNavigate();
-  const [jobs, setJobs] = useState(INITIAL_RECRUITER_JOBS);
+  const [myJobs, setMyJobs] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [newJob, setNewJob] = useState({
+  const [loading, setLoading] = useState(false);
+
+  const [formData, setFormData] = useState({
     title: '',
     location: '',
+    workMode: 'Remote',
     type: 'Full-time',
     salary: '',
-    description: '',
-    requiredSkills: ''
+    description: ''
   });
 
-  const handleToggleStatus = (jobId) => {
-    setJobs((prev) =>
-      prev.map((j) =>
-        j.id === jobId ? { ...j, status: j.status === 'Open' ? 'Closed' : 'Open' } : j
-      )
-    );
+  useEffect(() => {
+    fetchMyJobs();
+  }, []);
+
+  const fetchMyJobs = async () => {
+    try {
+      const res = await API.get('/jobs/my-jobs');
+      setMyJobs(res.data);
+    } catch (err) {
+      console.error('Error fetching recruiter jobs:', err);
+    }
   };
 
-  const handleCreateJob = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!newJob.title || !newJob.location) return;
-
-    const created = {
-      ...newJob,
-      id: Date.now().toString(),
-      applicantCount: 0,
-      status: 'Open',
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-
-    setJobs([created, ...jobs]);
-    setShowModal(false);
-    setNewJob({
-      title: '',
-      location: '',
-      type: 'Full-time',
-      salary: '',
-      description: '',
-      requiredSkills: ''
-    });
+    setLoading(true);
+    try {
+      await API.post('/jobs', formData);
+      setShowModal(false);
+      setFormData({
+        title: '',
+        location: '',
+        workMode: 'Remote',
+        type: 'Full-time',
+        salary: '',
+        description: ''
+      });
+      fetchMyJobs();
+    } catch (err) {
+      alert(err.response?.data?.message || err.response?.data?.error || 'Failed to post job');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="dark-manage-jobs-container">
-      <div className="page-header-flex">
+    <div className="manage-jobs-page">
+      <div className="manage-jobs-header">
         <div>
-          <h1>Manage Job Listings</h1>
-          <p>Post new positions, edit active listings, and track candidate response counts.</p>
+          <h2>Company Job Postings</h2>
+          <p className="subtitle">Manage active openings for your organization ({myJobs.length})</p>
         </div>
-        <button className="btn-primary-blue" onClick={() => setShowModal(true)}>
-          ＋ Create Job Post
+        <button className="btn-create-job" onClick={() => setShowModal(true)}>
+          + Create Job Listing
         </button>
       </div>
 
-      <div className="job-listings-table-card">
-        <table className="recruiter-table">
-          <thead>
-            <tr>
-              <th>Job Title</th>
-              <th>Location & Type</th>
-              <th>Salary Range</th>
-              <th>Applicants</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {jobs.map((job) => (
-              <tr key={job.id}>
-                <td>
-                  <span className="font-bold">{job.title}</span>
-                  <p className="sub-text">Posted on {job.createdAt}</p>
-                </td>
-                <td>{job.location} · {job.type}</td>
-                <td>{job.salary}</td>
-                <td>
-                  <span className="applicant-badge">{job.applicantCount} candidates</span>
-                </td>
-                <td>
-                  <span className={`status-tag ${job.status.toLowerCase()}`}>
-                    {job.status}
-                  </span>
-                </td>
-                <td className="actions-cell">
-                  <button
-                    className="btn-action-sm"
-                    onClick={() => navigate('/admin/applications')}
-                  >
-                    View Applicants
-                  </button>
-                  <button
-                    className="btn-action-sm secondary"
-                    onClick={() => handleToggleStatus(job.id)}
-                  >
-                    {job.status === 'Open' ? 'Close Listing' : 'Reopen'}
-                  </button>
-                </td>
-              </tr>
+      <div className="jobs-list-container">
+        {myJobs.length === 0 ? (
+          <div className="no-jobs-card">
+            <p>You haven't published any job listings yet.</p>
+          </div>
+        ) : (
+          <div className="jobs-grid">
+            {myJobs.map((job) => (
+              <div key={job._id} className="recruiter-job-card">
+                <div className="card-top-row">
+                  <span className={`status-pill ${job.status ? job.status.toLowerCase() : 'open'}`}>{job.status || 'Open'}</span>
+                  <span className="card-type-tag">{job.type}</span>
+                </div>
+                <h3 className="job-card-title">{job.title}</h3>
+                <p className="job-card-company">{job.company}</p>
+                <p className="job-card-meta">{job.location} • {job.workMode}</p>
+                <p className="job-card-salary">{job.salary}</p>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        )}
       </div>
 
-      {/* Post Job Modal */}
       {showModal && (
-        <div className="modal-backdrop">
-          <div className="modal-card modal-lg">
-            <h3>Post New Job Listing</h3>
-            <form onSubmit={handleCreateJob}>
+        <div className="modal-backdrop" onClick={() => setShowModal(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Post New Job</h3>
+              <button className="btn-close-x" onClick={() => setShowModal(false)}>×</button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="modal-form">
               <div className="form-group">
                 <label>Job Title</label>
                 <input
                   type="text"
-                  placeholder="e.g. Senior Frontend Engineer"
-                  value={newJob.title}
-                  onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
+                  placeholder="e.g. Senior Full Stack Developer"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   required
                 />
               </div>
 
               <div className="form-row">
-                <div className="form-group">
-                  <label>Location & Work Style</label>
+                <div className="form-group flex-1">
+                  <label>Location</label>
                   <input
                     type="text"
-                    placeholder="e.g. Bengaluru (Remote)"
-                    value={newJob.location}
-                    onChange={(e) => setNewJob({ ...newJob, location: e.target.value })}
+                    placeholder="e.g. Remote, New Delhi"
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     required
                   />
                 </div>
-                <div className="form-group">
+
+                <div className="form-group flex-1">
+                  <label>Work Mode</label>
+                  <select
+                    value={formData.workMode}
+                    onChange={(e) => setFormData({ ...formData, workMode: e.target.value })}
+                  >
+                    <option value="Remote">Remote</option>
+                    <option value="Hybrid">Hybrid</option>
+                    <option value="On-site">On-site</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group flex-1">
+                  <label>Employment Type</label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  >
+                    <option value="Full-time">Full-time</option>
+                    <option value="Part-time">Part-time</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Internship">Internship</option>
+                  </select>
+                </div>
+
+                <div className="form-group flex-1">
                   <label>Salary Range</label>
                   <input
                     type="text"
-                    placeholder="e.g. ₹20L - ₹28L"
-                    value={newJob.salary}
-                    onChange={(e) => setNewJob({ ...newJob, salary: e.target.value })}
+                    placeholder="e.g. ₹12 - ₹15 LPA"
+                    value={formData.salary}
+                    onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                    required
                   />
                 </div>
               </div>
 
               <div className="form-group">
-                <label>Required Skills (comma separated)</label>
-                <input
-                  type="text"
-                  placeholder="React, JavaScript, Node.js, REST APIs"
-                  value={newJob.requiredSkills}
-                  onChange={(e) => setNewJob({ ...newJob, requiredSkills: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Detailed Job Description</label>
+                <label>Job Description</label>
                 <textarea
                   rows="4"
-                  placeholder="Describe key responsibilities, team structure, and prerequisites..."
-                  value={newJob.description}
-                  onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
+                  placeholder="Enter detailed role responsibilities and qualifications..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  required
                 />
               </div>
 
-              <div className="modal-actions-btns">
+              <div className="modal-footer">
                 <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn-save">
-                  Publish Job
+                <button type="submit" className="btn-submit" disabled={loading}>
+                  {loading ? 'Publishing...' : 'Publish Job Listing'}
                 </button>
               </div>
             </form>

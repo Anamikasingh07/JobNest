@@ -1,18 +1,19 @@
-
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-
 const {
-  createJob,
   getJobs,
-} = require("../controllers/jobController");
+  getRecruiterJobs,
+  createJob,
+  updateJob
+} = require('../controllers/jobController');
+const { protect, recruiterOnly } = require('../middleware/authMiddleware');
 
-const {
-  protect,
-  adminOnly,
-} = require("../middleware/authMiddleware");
+// Public candidate view
+router.get('/', getJobs);
 
-router.post("/", protect, adminOnly, createJob);
-router.get("/", getJobs);
+// Recruiter specific views
+router.get('/my-jobs', protect, recruiterOnly, getRecruiterJobs);
+router.post('/', protect, recruiterOnly, createJob);
+router.put('/:id', protect, recruiterOnly, updateJob);
 
 module.exports = router;

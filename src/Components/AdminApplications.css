@@ -1,122 +1,193 @@
-.dark-manage-jobs-container,
-.dark-admin-apps-container {
-  padding: 32px 40px;
-  background-color: #0d0f12;
-  color: #f3f4f6;
-  min-height: calc(100vh - 64px);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+.admin-app-page {
+  max-width: 1200px;
+  margin: 24px auto;
+  padding: 0 20px;
+  color: #111827;
 }
 
-.page-header-flex {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
+.admin-app-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
 }
 
-.page-header-flex h1 {
-  font-size: 26px;
-  margin: 0 0 6px;
+.admin-app-header .subtitle {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0 0 20px 0;
 }
 
-.page-header-flex p {
-  color: #9ca3af;
-  margin: 0;
+.applications-table-wrapper {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.app-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
   font-size: 14px;
 }
 
-.job-listings-table-card,
-.apps-detail-pane {
-  background-color: #16191e;
-  border: 1px solid #272a30;
-  border-radius: 12px;
-  padding: 24px;
+.app-data-table th {
+  background-color: #F9FAFB;
+  color: #6B7280;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 12px 20px;
+  border-bottom: 1px solid #E5E7EB;
 }
 
-.recruiter-table {
-  width: 100%;
-  border-collapse: collapse;
+.app-data-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid #E5E7EB;
+  color: #374151;
 }
 
-.recruiter-table th,
-.recruiter-table td {
-  padding: 14px 16px;
-  text-align: left;
-  border-bottom: 1px solid #272a30;
+.applicant-name-cell {
+  display: flex;
+  flex-direction: column;
 }
 
-.recruiter-table th {
-  color: #9ca3af;
-  font-size: 13px;
+.applicant-email {
+  font-size: 12px;
+  color: #6B7280;
 }
 
-.applicant-badge {
-  background-color: #1e3a8a;
-  color: #93c5fd;
+.stage-badge {
+  display: inline-block;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
 }
 
-.status-tag.open {
-  color: #34d399;
-  font-weight: 700;
-}
+.stage-badge.applied { background-color: #E0F2FE; color: #0369A1; }
+.stage-badge.interview { background-color: #FEF3C7; color: #B45309; }
+.stage-badge.offer { background-color: #DCFCE7; color: #15803D; }
+.stage-badge.rejected { background-color: #FEE2E2; color: #B91C1C; }
 
-.status-tag.closed {
-  color: #f87171;
-  font-weight: 700;
-}
-
-.actions-cell {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-action-sm {
-  background-color: #2563eb;
-  color: #ffffff;
-  border: none;
-  padding: 6px 12px;
+.btn-review-candidate {
+  background-color: #F3F4F6;
+  border: 1px solid #D1D5DB;
   border-radius: 6px;
-  font-size: 12px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
+  color: #1F2937;
 }
 
-.btn-action-sm.secondary {
-  background-color: #272a30;
+.btn-review-candidate:hover {
+  background-color: #E5E7EB;
 }
 
-.apps-split-container {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 20px;
+/* Modal Review Styling */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
-.applicant-card {
-  background-color: #16191e;
-  border: 1px solid #272a30;
-  border-radius: 10px;
-  padding: 16px;
-  margin-bottom: 12px;
-  cursor: pointer;
+.modal-review-card {
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 620px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 24px 28px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
-.applicant-card.active {
-  border-color: #2563eb;
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid #E5E7EB;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
 }
 
-.match-tag {
-  color: #34d399;
+.modal-header h3 {
+  font-size: 20px;
   font-weight: 700;
-  font-size: 12px;
+  margin: 0 0 4px 0;
 }
 
-.stage-selector-box select {
-  background-color: #0d0f12;
-  color: #ffffff;
-  border: 1px solid #272a30;
+.applied-role-tag {
+  font-size: 13px;
+  color: #1D4F9F;
+  font-weight: 600;
+  margin: 0;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #9CA3AF;
+}
+
+.review-section {
+  margin-bottom: 18px;
+}
+
+.review-section h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #374151;
+  margin: 0 0 8px 0;
+}
+
+.status-select-input {
   padding: 8px 12px;
   border-radius: 6px;
+  border: 1px solid #D1D5DB;
+  font-size: 14px;
+  outline: none;
 }
+
+.doc-download-link {
+  display: inline-block;
+  padding: 8px 14px;
+  background-color: #E6ECF6;
+  color: #1D4F9F;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.text-box-display {
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+  color: #4B5563;
+  line-height: 1.5;
+}
+
+.answer-item {
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.q-text { margin: 0 0 4px 0; color: #111827; }
+.a-text { margin: 0; color: #1D4F9F; }

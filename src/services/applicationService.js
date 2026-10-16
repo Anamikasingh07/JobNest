@@ -1,114 +1,31 @@
-import axios from "axios";
+import axios from 'axios';
 
-const API =
-  "http://localhost:5000/api/applications";
+const API = axios.create({
+  baseURL: 'http://localhost:5000/api'
+});
 
-/* APPLY JOB */
-export const applyJob =
-  async (jobId, token) => {
+// Automatically attach JWT authorization token
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
-    const response =
-      await axios.post(
+// Auth API Calls
+export const loginUser = (credentials) => API.post('/auth/login', credentials);
+export const registerUser = (userData) => API.post('/auth/register', userData);
 
-        `${API}/apply`,
+// Job API Calls
+export const fetchJobs = (params) => API.get('/jobs', { params });
+export const fetchJobById = (id) => API.get(`/jobs/${id}`);
+export const createJobPost = (jobData) => API.post('/jobs', jobData);
 
-        { jobId },
+// Application API Calls
+export const fetchCandidateTracker = () => API.get('/applications');
+export const submitJobApplication = (payload) => API.post('/applications/apply', payload);
+export const updateTrackerStage = (id, payload) => API.put(`/applications/${id}`, payload);
+export const fetchRecruiterApplicants = () => API.get('/applications/recruiter');
 
-        {
-
-          headers: {
-
-            Authorization:
-              `Bearer ${token}`
-
-          }
-
-        }
-
-      );
-
-    return response.data;
-
-};
-
-/* GET USER APPLICATIONS */
-export const getMyApplications =
-  async (token) => {
-
-    const response =
-      await axios.get(
-
-        `${API}/my-applications`,
-
-        {
-
-          headers: {
-
-            Authorization:
-              `Bearer ${token}`
-
-          }
-
-        }
-
-      );
-
-    return response.data;
-
-};
-/* UPDATE STATUS */
-export const updateStatus =
-  async (
-    applicationId,
-    status,
-    token
-  ) => {
-
-    const response =
-      await axios.put(
-
-        `${API}/status`,
-
-        {
-          applicationId,
-          status
-        },
-
-        {
-          headers: {
-            Authorization:
-              `Bearer ${token}`
-          }
-        }
-
-      );
-
-    return response.data;
-
-};
-
-/* GET ALL APPLICATIONS */
-export const getAllApplications =
-  async (token) => {
-
-    const response =
-      await axios.get(
-
-        `${API}/all`,
-
-        {
-
-          headers: {
-
-            Authorization:
-              `Bearer ${token}`
-
-          }
-
-        }
-
-      );
-
-    return response.data;
-
-};
+export default API;

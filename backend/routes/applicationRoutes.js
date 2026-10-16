@@ -1,39 +1,14 @@
-
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-
 const {
-  applyJob,
-  getUserApplications,
-  getAllApplications,
-  updateApplicationStatus,
-} = require("../controllers/applicationController");
-
-const {
-  protect,
-  adminOnly,
-} = require("../middleware/authMiddleware");
-
-router.post("/apply", protect, applyJob);
-
-router.get(
-  "/my-applications",
-  protect,
-  getUserApplications
-);
-
-router.get(
-  "/all",
-  protect,
-  adminOnly,
-  getAllApplications
-);
-
-router.put(
-  "/status",
-  protect,
-  adminOnly,
+  applyForJob,
+  getRecruiterApplicants,
   updateApplicationStatus
-);
+} = require('../controllers/applicationController');
+const { protect, recruiterOnly } = require('../middleware/authMiddleware');
+
+router.post('/apply', protect, applyForJob);
+router.get('/recruiter/applicants', protect, recruiterOnly, getRecruiterApplicants);
+router.put('/:id/status', protect, recruiterOnly, updateApplicationStatus);
 
 module.exports = router;
