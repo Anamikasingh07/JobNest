@@ -47,6 +47,12 @@
   color: #374151;
 }
 
+.empty-cell {
+  text-align: center;
+  padding: 32px !important;
+  color: #6B7280;
+}
+
 .applicant-name-cell {
   display: flex;
   flex-direction: column;
@@ -66,6 +72,7 @@
 }
 
 .stage-badge.applied { background-color: #E0F2FE; color: #0369A1; }
+.stage-badge.reviewing { background-color: #F3E8FF; color: #6B21A8; }
 .stage-badge.interview { background-color: #FEF3C7; color: #B45309; }
 .stage-badge.offer { background-color: #DCFCE7; color: #15803D; }
 .stage-badge.rejected { background-color: #FEE2E2; color: #B91C1C; }
@@ -85,7 +92,7 @@
   background-color: #E5E7EB;
 }
 
-/* Modal Review Styling */
+/* Modal Review Dialog */
 .modal-backdrop {
   position: fixed;
   top: 0;

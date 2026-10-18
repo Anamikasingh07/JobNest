@@ -1,36 +1,44 @@
+// backend/controllers/applicationController.js
 const Application = require('../models/Application');
 const Job = require('../models/Job');
 
-// GET /api/applications/recruiter/applicants -> Get live submissions for recruiter
-exports.getRecruiterApplicants = async (req, res) => {
+exports.applyForJob = async (req, res) => {
   try {
-    const applications = await Application.find({ employerId: req.user.id })
-      .populate('jobId', 'title company location salary')
-      .populate('candidateId', 'name email')
-      .sort({ createdAt: -1 });
+    const { jobId, phone, resumeUrl, coverLetter, answers } = req.body;
 
-    res.json(applications);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching applications', error: error.message });
-  }
-};
-
-// PUT /api/applications/:id/status -> Change applicant pipeline stage
-exports.updateApplicationStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
-    const application = await Application.findOneAndUpdate(
-      { _id: req.params.id, employerId: req.user.id },
-      { status },
-      { new: true }
-    );
-
-    if (!application) {
-      return res.status(404).json({ message: 'Application not found or unauthorized.' });
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ message: 'Job posting not found.' });
     }
 
-    res.json(application);
+    if (!job.employerId) {
+      return res.status(400).json({ 
+        message: 'This job posting is missing owner details. Please ask the recruiter to recreate the job.' 
+      });
+    }
+
+    // Check duplicate application
+    const existingApp = await Application.findOne({ jobId, candidateId: req.user.id });
+    if (existingApp) {
+      return res.status(400).json({ message: 'You have already applied for this job.' });
+    }
+
+    const application = await Application.create({
+      jobId,
+      candidateId: req.user.id,
+      employerId: job.employerId, // 👈 Explicitly binds application to posting recruiter
+      applicantName: req.user.name,
+      applicantEmail: req.user.email,
+      applicantPhone: phone || '',
+      resumeUrl: resumeUrl || '',
+      coverLetter: coverLetter || '',
+      answers: answers || [],
+      status: 'Applied'
+    });
+
+    res.status(201).json({ message: 'Application submitted successfully!', application });
   } catch (error) {
-    res.status(500).json({ message: 'Error updating status', error: error.message });
+    console.error('Apply error:', error);
+    res.status(500).json({ message: 'Error submitting application', error: error.message });
   }
 };
