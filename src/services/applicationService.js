@@ -23,8 +23,8 @@ export const fetchJobById = (id) => API.get(`/jobs/${id}`);
 export const createJobPost = (jobData) => API.post('/jobs', jobData);
 
 // Application API Calls
-export const fetchCandidateTracker = () => API.get('/applications');
-export const submitJobApplication = (payload) => API.post('/applications/apply', payload);
+export const fetchCandidateTracker = () => API.get('/applications/candidate');
+export const submitJobApplication = (jobId, payload) => API.post(`/applications/${jobId}`, payload);
 export const updateTrackerStage = (id, payload) => API.put(`/applications/${id}`, payload);
 export const fetchRecruiterApplicants = () => API.get('/applications/recruiter');
 

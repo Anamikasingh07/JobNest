@@ -3,9 +3,35 @@ import { useNavigate } from 'react-router-dom';
 import API from '../services/applicationService';
 import './Joblist.css';
 
+const SKILL_CATALOG = ['JavaScript', 'TypeScript', 'React', 'Node.js', 'Express', 'MongoDB', 'Python', 'Java', 'C++', 'C#', 'SQL', 'HTML', 'CSS', 'Tailwind', 'AWS', 'Docker', 'Kubernetes', 'Git', 'REST API', 'GraphQL', 'Figma', 'Machine Learning', 'Communication', 'Project Management'];
+const normalizeSkill = (skill) => String(skill).toLowerCase().replace(/[^a-z0-9]/g, '');
+const getCompanyName = (job) => {
+  const savedName = String(job.companyName || job.company || '').trim();
+  if (savedName && savedName.toLowerCase() !== 'company') return savedName;
+  return job.postedBy?.companyName || job.recruiter?.companyName || job.postedBy?.name || job.recruiter?.name || 'Company name not provided';
+};
+const getRequiredSkills = (job) => {
+  if (Array.isArray(job.skills) && job.skills.length) return job.skills;
+  const text = `${job.title || ''} ${job.description || ''}`.toLowerCase();
+  return SKILL_CATALOG.filter((skill) => {
+    if (skill === 'Java' && text.includes('javascript')) return false;
+    return text.includes(skill.toLowerCase());
+  });
+};
+
+const getPostedAge = (createdAt) => {
+  const timestamp = new Date(createdAt).getTime();
+  if (!Number.isFinite(timestamp)) return 'date unavailable';
+  const days = Math.max(0, Math.floor((Date.now() - timestamp) / 86400000));
+  if (days === 0) return 'today';
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+};
+
 const JobList = () => {
   const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
+  const [appliedJobIds, setAppliedJobIds] = useState(() => new Set());
+  const [candidateSkills, setCandidateSkills] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,6 +46,10 @@ const JobList = () => {
     fetchJobs();
   }, [experience, workMode, jobType]);
 
+  useEffect(() => {
+    API.get('/auth/profile').then(({ data }) => setCandidateSkills(data.skills || [])).catch(() => setCandidateSkills([]));
+  }, []);
+
   const fetchJobs = async () => {
     try {
       setLoading(true);
@@ -30,10 +60,19 @@ const JobList = () => {
       if (workMode !== 'All') params.workMode = workMode;
       if (jobType !== 'All') params.type = jobType;
 
-      const res = await API.get('/jobs', { params });
-      setJobs(res.data);
-      if (res.data && res.data.length > 0) {
-        setSelectedJob(res.data[0]);
+      const [jobsResponse, applicationsResponse] = await Promise.all([
+        API.get('/jobs', { params }),
+        API.get('/applications/candidate').catch(() => ({ data: [] }))
+      ]);
+      const jobList = Array.isArray(jobsResponse.data) ? jobsResponse.data : [];
+      const appliedIds = new Set((applicationsResponse.data || []).map((application) => {
+        const appliedJob = application.job;
+        return String(appliedJob?._id || appliedJob || '');
+      }).filter(Boolean));
+      setJobs(jobList);
+      setAppliedJobIds(appliedIds);
+      if (jobList.length > 0) {
+        setSelectedJob(jobList[0]);
       } else {
         setSelectedJob(null);
       }
@@ -48,6 +87,12 @@ const JobList = () => {
     e.preventDefault();
     fetchJobs();
   };
+
+  const requiredSkills = selectedJob ? getRequiredSkills(selectedJob) : [];
+  const candidateSkillSet = new Set(candidateSkills.map(normalizeSkill));
+  const matchingSkills = requiredSkills.filter((skill) => candidateSkillSet.has(normalizeSkill(skill)));
+  const missingSkills = requiredSkills.filter((skill) => !candidateSkillSet.has(normalizeSkill(skill)));
+  const matchScore = requiredSkills.length ? Math.round((matchingSkills.length / requiredSkills.length) * 100) : null;
 
   return (
     <div className="job-search-page">
@@ -112,8 +157,14 @@ const JobList = () => {
                 onClick={() => setSelectedJob(job)}
               >
                 <h3 className="card-job-title">{job.title}</h3>
-                <p className="card-company-name">{job.company}</p>
+                <p className="card-company-name">{getCompanyName(job)}</p>
                 <p className="card-location-meta">{job.location} ({job.workMode || 'On-site'})</p>
+                <div className="job-card-required-skills" aria-label="Required skills">
+                  {getRequiredSkills(job).length ? getRequiredSkills(job).map((skill) => (
+                    <span className={`job-match-skill ${candidateSkillSet.has(normalizeSkill(skill)) ? 'matched' : 'missing'}`} key={`${job._id}-${skill}`}>{skill}</span>
+                  )) : <span className="job-card-no-skills">No required skills listed</span>}
+                </div>
+                <p className="card-posted-age">Posted {getPostedAge(job.createdAt)}</p>
                 <span className="card-salary-badge">{job.salary}</span>
               </div>
             ))
@@ -127,24 +178,47 @@ const JobList = () => {
               <div className="detail-header">
                 <h2 className="detail-title">{selectedJob.title}</h2>
                 <p className="detail-subtitle">
-                  {selectedJob.company} {selectedJob.location ? `• ${selectedJob.location}` : ''}
+                  {selectedJob.companyName || selectedJob.company || 'Company'} {selectedJob.location ? `• ${selectedJob.location}` : ''}
                 </p>
+                <p className="detail-posted-age">Posted {getPostedAge(selectedJob.createdAt)}</p>
                 <div className="detail-tags">
-                  <span className="detail-tag">{selectedJob.type || 'Full-time'}</span>
+                  <span className="detail-tag">{selectedJob.employmentType || selectedJob.type || 'Full-time'}</span>
                   <span className="detail-tag">{selectedJob.workMode || 'On-site'}</span>
                   <span className="detail-tag highlight">{selectedJob.salary}</span>
                 </div>
-                <button
-                  className="btn-apply-primary"
-                  onClick={() => navigate(`/jobs/${selectedJob._id}/apply`)}
-                >
-                  Apply Now
-                </button>
+                {appliedJobIds.has(String(selectedJob._id)) ? (
+                  <span className="job-applied-label" role="status">Applied</span>
+                ) : (
+                  <button
+                    className="btn-apply-primary"
+                    disabled={!selectedJob._id}
+                    onClick={() => selectedJob._id && navigate(`/jobs/${selectedJob._id}/apply`)}
+                  >Apply Now</button>
+                )}
               </div>
 
               <hr className="detail-divider" />
 
               <div className="detail-body">
+                <section className="job-skill-match">
+                  <h3>ATS compatibility score</h3>
+                  {matchScore === null ? (
+                    <p>This employer has not listed specific skills for this job yet.</p>
+                  ) : (
+                    <>
+                      <p className="job-match-score">{matchScore}% ATS-style profile match</p>
+                      <p>{matchScore >= 80 ? 'Strong skill match — these skills can help your application stand out.' : matchScore >= 50 ? 'Some relevant skills match and may strengthen your application.' : 'A few required skills match; review the missing skills below.'} The estimate compares your listed skills with this job’s listed skills; it does not predict a hiring decision.</p>
+                      <div className="job-match-skill-groups">
+                        <div><strong>Skills requested by the recruiter</strong><div>{requiredSkills.map((skill) => {
+                          const matched = candidateSkillSet.has(normalizeSkill(skill));
+                          return <span className={`job-match-skill ${matched ? 'matched' : 'missing'}`} key={`required-${skill}`}>{matched ? '✓ ' : '× '}{skill}</span>;
+                        })}</div></div>
+                        <div className="job-match-legend"><span className="job-match-skill matched">Matches your profile</span><span className="job-match-skill missing">Not listed in your profile</span></div>
+                      </div>
+                      {!candidateSkills.length && <p>Add your skills in your profile to get a more useful comparison.</p>}
+                    </>
+                  )}
+                </section>
                 <h3>Job Description</h3>
                 <p className="description-text">{selectedJob.description}</p>
 

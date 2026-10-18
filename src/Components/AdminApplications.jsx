@@ -1,90 +1,209 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import API from '../services/applicationService';
+import './AdminApplications.css';
 
-const RecruiterApplicants = () => {
+const AdminApplications = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [applications, setApplications] = useState([]);
   const [selectedApp, setSelectedApp] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [showCandidateProfile, setShowCandidateProfile] = useState(false);
+  const [error, setError] = useState('');
+  const applicationId = searchParams.get('applicationId');
 
   useEffect(() => {
-    const fetchApplications = async () => {
+    let active = true;
+    const loadApplications = async () => {
+      setLoading(true);
+      setError('');
       try {
-        const res = await axios.get('/api/applications/recruiter', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        setApplications(res.data);
-      } catch (err) {
-        console.error('Error loading applications:', err);
+        const response = await API.get('/applications/recruiter');
+        if (!active) return;
+        const list = Array.isArray(response.data) ? response.data : response.data.applications || [];
+        setApplications(list);
+
+        if (applicationId) {
+          const detailResponse = await API.get(`/applications/recruiter/${applicationId}`);
+          if (active) setSelectedApp(detailResponse.data);
+        } else if (active) {
+          setSelectedApp(null);
+        }
+      } catch (requestError) {
+        if (active) setError(requestError.response?.data?.message || 'Could not load recruiter applications.');
+      } finally {
+        if (active) setLoading(false);
       }
     };
-    fetchApplications();
-  }, []);
+
+    loadApplications();
+    return () => { active = false; };
+  }, [applicationId]);
+
+  const openApplication = (id) => {
+    setError('');
+    setShowCandidateProfile(false);
+    setSearchParams({ applicationId: id });
+  };
+
+  const closeDetails = () => {
+    setSelectedApp(null);
+    setSearchParams({});
+  };
+
+  const updateApplicationStatus = async (status) => {
+    if (!selectedApp || updatingStatus) return;
+    setUpdatingStatus(true);
+    setError('');
+    try {
+      const response = await API.patch(`/applications/recruiter/${selectedApp._id}/status`, { status });
+      const updatedApplication = response.data.application;
+      setSelectedApp((current) => ({ ...current, status: updatedApplication.status }));
+      setApplications((current) => current.map((application) =>
+        application._id === updatedApplication._id
+          ? { ...application, status: updatedApplication.status }
+          : application
+      ));
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Could not update application status.');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const applicantName = selectedApp?.applicantDetails?.fullName || selectedApp?.candidate?.name || 'Candidate';
+  const applicantEmail = selectedApp?.applicantDetails?.email || selectedApp?.candidate?.email || 'Email unavailable';
+  const resumeHref = selectedApp?.resumeData
+    ? `data:${selectedApp.resumeContentType || 'application/octet-stream'};base64,${selectedApp.resumeData}`
+    : '';
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Received Applications ({applications.length})</h1>
+    <section className="applications-page">
+      <header className="applications-page-header">
+        <div>
+          <p className="applications-eyebrow">RECRUITER WORKSPACE</p>
+          <h1>Applicants</h1>
+          <p>Review candidates who applied to your job postings.</p>
+        </div>
+        <span className="applications-count">{applications.length} application{applications.length === 1 ? '' : 's'}</span>
+      </header>
 
-      <div className="bg-white border rounded-lg overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-gray-100 border-b">
-            <tr>
-              <th className="p-3">Candidate</th>
-              <th className="p-3">Applied Job</th>
-              <th className="p-3">Date</th>
-              <th className="p-3">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {applications.map(app => (
-              <tr key={app._id} className="border-b">
-                <td className="p-3 font-medium">{app.candidate?.name || 'N/A'}</td>
-                <td className="p-3">{app.job?.title || 'N/A'}</td>
-                <td className="p-3">{new Date(app.appliedAt).toLocaleDateString()}</td>
-                <td className="p-3">
-                  <button
-                    onClick={() => setSelectedApp(app)}
-                    className="px-3 py-1 bg-gray-100 border rounded hover:bg-gray-200"
-                  >
-                    Review Candidate
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {error && <div className="applications-error" role="alert">{error}</div>}
+
+      <div className="applications-table-card">
+        {loading ? <p className="applications-empty">Loading applications…</p> : (
+          <table className="applications-table">
+            <thead>
+              <tr><th>Candidate</th><th>Applied job</th><th>Status</th><th>Applied on</th><th /></tr>
+            </thead>
+            <tbody>
+              {applications.length ? applications.map((application) => (
+                <tr key={application._id}>
+                  <td><strong>{application.applicantDetails?.fullName || application.candidate?.name || 'Candidate'}</strong><small>{application.applicantDetails?.email || application.candidate?.email}</small></td>
+                  <td>{application.job?.title || 'Job posting'}</td>
+                  <td>{application.status || 'Applied'}</td>
+                  <td>{application.appliedAt ? new Date(application.appliedAt).toLocaleDateString() : '—'}</td>
+                  <td><button type="button" className="application-review-button" onClick={() => openApplication(application._id)}>Review candidate</button></td>
+                </tr>
+              )) : (
+                <tr><td className="applications-empty" colSpan="5">No applications received for your job postings yet.</td></tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      {/* Review Modal */}
       {selectedApp && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white p-6 rounded-lg max-w-lg w-full space-y-4">
-            <h3 className="text-xl font-bold">{selectedApp.candidate?.name}'s Application</h3>
-            <p className="text-sm text-gray-600">Email: {selectedApp.candidate?.email}</p>
+        <div className="application-detail-backdrop" onClick={closeDetails}>
+          <article className="application-detail-card" role="dialog" aria-modal="true" aria-labelledby="application-detail-title" onClick={(event) => event.stopPropagation()}>
+            <header className="application-detail-header">
+              <div>
+                <p className="applications-eyebrow">{selectedApp.job?.title || 'Job application'}</p>
+                <h2 id="application-detail-title">{applicantName}</h2>
+              </div>
+              <button type="button" className="application-close-button" onClick={closeDetails} aria-label="Close application details">×</button>
+            </header>
 
-            <div>
-              <h4 className="font-semibold text-sm mb-2">Submitted Answers:</h4>
-              {selectedApp.answers && selectedApp.answers.length > 0 ? (
-                selectedApp.answers.map((ans, idx) => (
-                  <div key={idx} className="p-2 bg-gray-50 border rounded mb-2 text-sm">
-                    <p className="font-semibold text-gray-700">{ans.questionText}</p>
-                    <p className="text-gray-900">{ans.answerText}</p>
-                  </div>
-                ))
+            <section className="application-detail-section">
+              <h3>Candidate details</h3>
+              <p><strong>Application status:</strong> {selectedApp.status || 'Applied'}</p>
+              <p><strong>Email:</strong> {applicantEmail}</p>
+              <p><strong>Phone:</strong> {selectedApp.applicantDetails?.phone || selectedApp.candidate?.phone || 'Not provided'}</p>
+              <p><strong>Location:</strong> {selectedApp.applicantDetails?.location || 'Not provided'}</p>
+              <p><strong>Applied:</strong> {selectedApp.appliedAt ? new Date(selectedApp.appliedAt).toLocaleString() : '—'}</p>
+            </section>
+
+            <section className="application-detail-section">
+              <button type="button" className="application-review-button" onClick={() => setShowCandidateProfile((visible) => !visible)}>
+                {showCandidateProfile ? 'Hide profile' : 'View profile'}
+              </button>
+            </section>
+
+            {showCandidateProfile && (
+              <section className="application-detail-section candidate-profile-section">
+                <h3>Candidate profile</h3>
+                <p><strong>Headline:</strong> {selectedApp.candidate?.headline || 'Not provided'}</p>
+                <p><strong>Location:</strong> {selectedApp.candidate?.location || selectedApp.applicantDetails?.location || 'Not provided'}</p>
+                <p><strong>About:</strong> {selectedApp.candidate?.about || 'Not provided'}</p>
+                <div><strong>Skills</strong><div className="candidate-profile-tags">{selectedApp.candidate?.skills?.length ? selectedApp.candidate.skills.map((skill) => <span key={skill}>{skill}</span>) : <p>No skills listed.</p>}</div></div>
+                <p><strong>Experience</strong></p>
+                {selectedApp.candidate?.experience?.length ? <ul>{selectedApp.candidate.experience.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}</ul> : <p>Not provided</p>}
+                <p><strong>Education</strong></p>
+                {selectedApp.candidate?.education?.length ? <ul>{selectedApp.candidate.education.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}</ul> : <p>Not provided</p>}
+                <p><strong>Links</strong></p>
+                {selectedApp.candidate?.links?.length ? <ul>{selectedApp.candidate.links.map((link, index) => <li key={`${link}-${index}`}><a href={link.startsWith('http') ? link : `https://${link}`} target="_blank" rel="noreferrer">{link}</a></li>)}</ul> : <p>Not provided</p>}
+              </section>
+            )}
+
+            <section className="application-detail-section">
+              <h3>Update application</h3>
+              <p>Choose the next step for this candidate.</p>
+              <div className="application-status-actions">
+                <button type="button" className="application-status-button interview" disabled={updatingStatus} onClick={() => updateApplicationStatus('Interview')}>
+                  {updatingStatus ? 'Saving...' : 'Invite for interview'}
+                </button>
+                <button type="button" className="application-status-button hold" disabled={updatingStatus} onClick={() => updateApplicationStatus('On Hold')}>
+                  Put on hold
+                </button>
+                <button type="button" className="application-status-button reject" disabled={updatingStatus} onClick={() => updateApplicationStatus('Rejected')}>
+                  Reject
+                </button>
+              </div>
+            </section>
+
+            <section className="application-detail-section">
+              <h3>Resume</h3>
+              {resumeHref ? (
+                <a className="application-resume-link" href={resumeHref} download={selectedApp.resumeName || 'candidate-resume'}>
+                  Download {selectedApp.resumeName || 'candidate resume'}
+                </a>
               ) : (
-                <p className="text-sm text-gray-500">No custom screening questions answered.</p>
+                <p>{selectedApp.resumeName || selectedApp.candidate?.resume || 'No resume was attached to this application.'}</p>
               )}
-            </div>
+            </section>
 
-            <button
-              onClick={() => setSelectedApp(null)}
-              className="w-full py-2 bg-blue-600 text-white rounded"
-            >
-              Close
-            </button>
-          </div>
+            {selectedApp.coverLetter && (
+              <section className="application-detail-section">
+                <h3>Cover letter</h3>
+                <p className="application-cover-letter">{selectedApp.coverLetter}</p>
+              </section>
+            )}
+
+            <section className="application-detail-section">
+              <h3>Screening question answers</h3>
+              {selectedApp.answers?.length ? selectedApp.answers.map((answer, index) => (
+                <div className="application-answer" key={`${answer.questionText}-${index}`}>
+                  <strong>{answer.questionText}</strong>
+                  <p>{answer.answerText || 'No answer provided'}</p>
+                </div>
+              )) : <p>No screening questions were included with this application.</p>}
+            </section>
+          </article>
         </div>
       )}
-    </div>
+    </section>
   );
 };
 
-export default RecruiterApplicants;
+export default AdminApplications;

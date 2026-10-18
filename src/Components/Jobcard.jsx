@@ -1,7 +1,7 @@
 import React from 'react';
 import './Jobcard.css';
 
-const Jobcard = ({ job, isSelected, isSaved, onClick, onSave }) => {
+const Jobcard = ({ job, isSelected, isSaved, isApplied, onClick, onSave }) => {
   return (
     <div className={`dark-job-card ${isSelected ? 'selected' : ''}`} onClick={onClick}>
       <div className="card-top-group">
@@ -30,9 +30,15 @@ const Jobcard = ({ job, isSelected, isSaved, onClick, onSave }) => {
       <div className="card-pills-row">
         <span className="pill-gray">{job.jobType}</span>
         <span className="pill-gray">{job.workStyle}</span>
-        <span className={`pill-match ${job.matchPercentage > 80 ? 'high' : 'medium'}`}>
-          {job.matchPercentage}% match
-        </span>
+        {isApplied ? (
+          <span className="pill-gray" style={{ backgroundColor: '#22c55e', color: '#ffffff', fontWeight: 'bold' }}>
+            ✓ Applied
+          </span>
+        ) : (
+          <span className={`pill-match ${job.matchPercentage > 80 ? 'high' : 'medium'}`}>
+            {job.matchPercentage}% match
+          </span>
+        )}
       </div>
 
       <div className="card-footer-ago">{job.postedAgo}</div>

@@ -1,267 +1,117 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import API from '../services/applicationService';
 import './ProfilePage.css';
 
-const ProfilePage = () => {
-  const [profile, setProfile] = useState({
-    name: 'Test Name',
-    headline: 'Frontend Developer · React, Node.js',
-    location: 'Delhi, India',
-    email: 'test@email.com',
-    completeness: 70,
-    about: 'Frontend developer with 2 years building React apps. Looking for product-focused teams.',
-    resumeName: 'Test_Name_Resume.pdf',
-    resumeMeta: 'Uploaded 3 Oct · 210 KB',
-    aiSkillsCount: 12,
-    preferences: {
-      roles: 'Frontend, Full Stack',
-      location: 'Bengaluru, Remote',
-      expectedSalary: '₹18L+',
-      noticePeriod: 'Immediate'
-    },
-    visibility: {
-      profileVisible: true,
-      emailAlerts: true,
-      showSalary: false
-    },
-    experience: [
-      { id: '1', title: 'Frontend Intern', company: 'Acme Tech', period: 'Jun – Dec 2025' },
-      { id: '2', title: 'Freelance Developer', company: 'Self-employed', period: '2024 – 2025' }
-    ],
-    education: [
-      { id: '1', degree: 'B.Tech, Computer Science', institution: 'Delhi University', period: '2022 – 2026' }
-    ],
-    skills: ['React', 'Node.js', 'Tailwind', 'MongoDB', 'REST APIs'],
-    links: [
-      { id: '1', platform: 'GitHub', url: 'github.com/username' },
-      { id: '2', platform: 'LinkedIn', url: 'linkedin.com/in/username' }
-    ]
-  });
+const emptyProfile = {
+  name: '', email: '', phone: '', headline: '', location: '', about: '', skills: [], experience: [], education: [], links: [],
+  companyName: '', companyWebsite: '', companyLocation: '', companyIndustry: '', companyDescription: ''
+};
 
-  const handleToggle = (key) => {
-    setProfile((prev) => ({
-      ...prev,
-      visibility: { ...prev.visibility, [key]: !prev.visibility[key] }
-    }));
+const getSignedInUser = () => {
+  try { return JSON.parse(localStorage.getItem('currentUser') || '{}'); }
+  catch { return {}; }
+};
+
+const ProfilePage = () => {
+  const [profile, setProfile] = useState(() => ({ ...emptyProfile, ...getSignedInUser() }));
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  const isRecruiter = (profile.role || getSignedInUser().role) === 'recruiter';
+
+  useEffect(() => {
+    API.get('/auth/profile')
+      .then(({ data }) => setProfile({ ...emptyProfile, ...data }))
+      .catch((error) => setMessage(error.response?.data?.message || error.response?.data?.error || 'Could not load your profile.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const updateField = (field, value) => setProfile((current) => ({ ...current, [field]: value }));
+
+  const saveProfile = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setMessage('');
+    try {
+      const payload = isRecruiter
+        ? {
+            name: profile.name,
+            phone: profile.phone,
+            companyName: profile.companyName,
+            companyWebsite: profile.companyWebsite,
+            companyLocation: profile.companyLocation,
+            companyIndustry: profile.companyIndustry,
+            companyDescription: profile.companyDescription
+          }
+        : {
+            name: profile.name,
+            phone: profile.phone,
+            headline: profile.headline,
+            location: profile.location,
+            about: profile.about,
+            skills: (profile.skillsText ?? (profile.skills || []).join(', ')).split(',').map((skill) => skill.trim()).filter(Boolean),
+            experience: (profile.experienceText ?? (profile.experience || []).join('\n')).split('\n').map((item) => item.trim()).filter(Boolean),
+            education: (profile.educationText ?? (profile.education || []).join('\n')).split('\n').map((item) => item.trim()).filter(Boolean),
+            links: (profile.linksText ?? (profile.links || []).join('\n')).split('\n').map((item) => item.trim()).filter(Boolean)
+          };
+      const { data } = await API.put('/auth/profile', payload);
+      setProfile({ ...emptyProfile, ...data.user });
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      localStorage.setItem('currentUser', JSON.stringify({ ...currentUser, name: data.user.name }));
+      setMessage('Profile saved.');
+    } catch (error) {
+      setMessage(error.response?.data?.message || error.response?.data?.error || 'Could not save your profile.');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) return <div className="dark-profile-container"><div className="profile-card">Loading profile...</div></div>;
 
   return (
     <div className="dark-profile-container">
-      {/* Top Profile Summary Header Card */}
-      <div className="profile-card hero-card">
+      <header className="profile-card hero-card">
         <div className="profile-hero-left">
-          <div className="profile-hero-avatar">
-            {profile.name.charAt(0)}
-          </div>
+          <div className="profile-hero-avatar">{(profile.name || 'U').charAt(0).toUpperCase()}</div>
           <div className="profile-hero-info">
-            <h1 className="profile-name">{profile.name}</h1>
-            <p className="profile-headline">{profile.headline}</p>
-            <p className="profile-meta">
-              📍 {profile.location} &nbsp;·&nbsp; ✉️ {profile.email}
-            </p>
+            <h1 className="profile-name">{profile.name || 'Your profile'}</h1>
+            <p className="profile-headline">{isRecruiter ? (profile.companyName || 'Recruiter profile') : (profile.headline || 'Add a professional headline')}</p>
+            <p className="profile-meta">{profile.email}</p>
           </div>
         </div>
+      </header>
 
-        <div className="profile-completeness-box">
-          <div className="completeness-header">
-            <span>Profile {profile.completeness}% complete</span>
-          </div>
-          <div className="progress-track">
-            <div
-              className="progress-fill"
-              style={{ width: `${profile.completeness}%` }}
-            ></div>
-          </div>
-          <p className="completeness-hint">
-            Add certifications to reach 85%
-          </p>
+      <form className="profile-card profile-edit-form" onSubmit={saveProfile}>
+        {message && <p className="profile-save-message" role="status">{message}</p>}
+        <div className="profile-form-grid">
+          <label>Full name<input value={profile.name || ''} onChange={(event) => updateField('name', event.target.value)} required /></label>
+          <label>Email<input value={profile.email || ''} readOnly /></label>
+          <label>Phone<input value={profile.phone || ''} onChange={(event) => updateField('phone', event.target.value)} /></label>
+
+          {isRecruiter ? (
+            <>
+              <h2 className="profile-form-section-title">Company details</h2>
+              <label>Company name<input value={profile.companyName || ''} onChange={(event) => updateField('companyName', event.target.value)} placeholder="Your company" /></label>
+              <label>Company website<input value={profile.companyWebsite || ''} onChange={(event) => updateField('companyWebsite', event.target.value)} placeholder="https://example.com" /></label>
+              <label>Company location<input value={profile.companyLocation || ''} onChange={(event) => updateField('companyLocation', event.target.value)} /></label>
+              <label>Industry<input value={profile.companyIndustry || ''} onChange={(event) => updateField('companyIndustry', event.target.value)} /></label>
+              <label className="profile-form-wide">About the company<textarea rows="5" value={profile.companyDescription || ''} onChange={(event) => updateField('companyDescription', event.target.value)} /></label>
+            </>
+          ) : (
+            <>
+              <h2 className="profile-form-section-title">Candidate profile</h2>
+              <label>Professional headline<input value={profile.headline || ''} onChange={(event) => updateField('headline', event.target.value)} placeholder="e.g. Frontend Developer" /></label>
+              <label>Location<input value={profile.location || ''} onChange={(event) => updateField('location', event.target.value)} /></label>
+              <label className="profile-form-wide">Skills <small>Separate skills with commas. These are used to compare your profile with job requirements.</small><input value={profile.skillsText ?? (profile.skills || []).join(', ')} onChange={(event) => updateField('skillsText', event.target.value)} placeholder="React, JavaScript, Node.js" /></label>
+              <label className="profile-form-wide">About<textarea rows="4" value={profile.about || ''} onChange={(event) => updateField('about', event.target.value)} /></label>
+              <label className="profile-form-wide">Experience <small>One entry per line.</small><textarea rows="3" value={profile.experienceText ?? (profile.experience || []).join('\n')} onChange={(event) => updateField('experienceText', event.target.value)} /></label>
+              <label className="profile-form-wide">Education <small>One entry per line.</small><textarea rows="3" value={profile.educationText ?? (profile.education || []).join('\n')} onChange={(event) => updateField('educationText', event.target.value)} /></label>
+              <label className="profile-form-wide">Links <small>One URL per line.</small><textarea rows="2" value={profile.linksText ?? (profile.links || []).join('\n')} onChange={(event) => updateField('linksText', event.target.value)} /></label>
+            </>
+          )}
         </div>
-      </div>
-
-      {/* Grid Layout */}
-      <div className="profile-grid">
-        {/* Left Column */}
-        <div className="profile-column">
-          <div className="profile-card">
-            <div className="card-header-row">
-              <h3>About</h3>
-              <button className="btn-edit-link">Edit</button>
-            </div>
-            <p className="about-text">{profile.about}</p>
-          </div>
-
-          <div className="profile-card">
-            <div className="card-header-row">
-              <h3>Experience</h3>
-              <button className="btn-add-link">+ Add</button>
-            </div>
-            <div className="item-list">
-              {profile.experience.map((exp) => (
-                <div key={exp.id} className="list-item">
-                  <div>
-                    <h4 className="item-title">{exp.title}</h4>
-                    <p className="item-subtitle">
-                      {exp.company} · {exp.period}
-                    </p>
-                  </div>
-                  <span className="item-chevron">›</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="profile-card">
-            <div className="card-header-row">
-              <h3>Education</h3>
-              <button className="btn-add-link">+ Add</button>
-            </div>
-            <div className="item-list">
-              {profile.education.map((edu) => (
-                <div key={edu.id} className="list-item">
-                  <div>
-                    <h4 className="item-title">{edu.degree}</h4>
-                    <p className="item-subtitle">
-                      {edu.institution} · {edu.period}
-                    </p>
-                  </div>
-                  <span className="item-chevron">›</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="profile-card">
-            <div className="card-header-row">
-              <h3>Skills</h3>
-              <button className="btn-add-link">+ Add</button>
-            </div>
-            <div className="skills-pill-group">
-              {profile.skills.map((skill, index) => (
-                <span key={index} className="skill-blue-pill">
-                  {skill}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="profile-card">
-            <div className="card-header-row">
-              <h3>Projects and links</h3>
-              <button className="btn-add-link">+ Add</button>
-            </div>
-            <div className="item-list">
-              {profile.links.map((link) => (
-                <div key={link.id} className="list-item">
-                  <p className="link-text">🔗 {link.url}</p>
-                  <span className="item-chevron">›</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column */}
-        <div className="profile-column">
-          <div className="profile-card">
-            <h3>Resume</h3>
-            <div className="resume-preview-box">
-              <div className="resume-file-icon">📄</div>
-              <div className="resume-file-details">
-                <p className="resume-filename">{profile.resumeName}</p>
-                <p className="resume-meta">{profile.resumeMeta}</p>
-              </div>
-            </div>
-
-            <div className="resume-actions-row">
-              <button className="btn-secondary-dark">Replace</button>
-              <button className="btn-secondary-dark">Preview</button>
-            </div>
-
-            <p className="ai-detected-text">
-              ✓ {profile.aiSkillsCount} skills detected by AI
-            </p>
-          </div>
-
-          <div className="profile-card">
-            <div className="card-header-row">
-              <h3>Job preferences</h3>
-              <button className="btn-edit-link">Edit</button>
-            </div>
-            <div className="kv-rows">
-              <div className="kv-row">
-                <span className="kv-key">Roles</span>
-                <span className="kv-val">{profile.preferences.roles}</span>
-              </div>
-              <div className="kv-row">
-                <span className="kv-key">Location</span>
-                <span className="kv-val">{profile.preferences.location}</span>
-              </div>
-              <div className="kv-row">
-                <span className="kv-key">Expected salary</span>
-                <span className="kv-val">{profile.preferences.expectedSalary}</span>
-              </div>
-              <div className="kv-row">
-                <span className="kv-key">Notice period</span>
-                <span className="kv-val">{profile.preferences.noticePeriod}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="profile-card">
-            <h3>Visibility and alerts</h3>
-            <div className="toggle-rows">
-              <div className="toggle-row">
-                <span>Profile visible to recruiters</span>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={profile.visibility.profileVisible}
-                    onChange={() => handleToggle('profileVisible')}
-                  />
-                  <span className="slider round"></span>
-                </label>
-              </div>
-
-              <div className="toggle-row">
-                <span>Email job alerts</span>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={profile.visibility.emailAlerts}
-                    onChange={() => handleToggle('emailAlerts')}
-                  />
-                  <span className="slider round"></span>
-                </label>
-              </div>
-
-              <div className="toggle-row">
-                <span>Show salary to employers</span>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={profile.visibility.showSalary}
-                    onChange={() => handleToggle('showSalary')}
-                  />
-                  <span className="slider round"></span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div className="profile-card">
-            <h3>Account</h3>
-            <div className="account-action-list">
-              <button className="account-btn">
-                <span>Change password</span>
-                <span>›</span>
-              </button>
-              <button className="account-btn delete-text">
-                <span>Delete account</span>
-                <span>›</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+        <button className="profile-save-button" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save profile'}</button>
+      </form>
     </div>
   );
 };

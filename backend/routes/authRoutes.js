@@ -1,18 +1,23 @@
 const express = require('express');
 const router = express.Router();
-const {
-  register,
-  login,
-  forgotPassword,
-  resetPassword,
-  getMe
-} = require('../controllers/authController');
+const authController = require('../controllers/authController');
+
+// Ensure functions exist before registering routes
+const registerHandler = authController.register || authController.registerUser;
+const loginHandler = authController.login || authController.loginUser;
+const { getProfile, updateProfile } = authController;
 const { protect } = require('../middleware/authMiddleware');
 
-router.post('/register', register);
-router.post('/login', login);
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password', resetPassword);
-router.get('/me', protect, getMe);
+if (!registerHandler || !loginHandler) {
+  console.error('CRITICAL AUTH ROUTE ERROR:', {
+    register: !!registerHandler,
+    login: !!loginHandler
+  });
+}
+
+router.post('/register', registerHandler);
+router.post('/login', loginHandler);
+router.get('/profile', protect, getProfile);
+router.put('/profile', protect, updateProfile);
 
 module.exports = router;

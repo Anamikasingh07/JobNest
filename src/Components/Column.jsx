@@ -59,17 +59,9 @@ const Column = ({ stage, applications = [], onStatusChange }) => {
                 <span className="applied-ago">
                   🕒 Applied {app.appliedDaysAgo} days ago
                 </span>
-                <select
-                  className="status-dropdown"
-                  value={app.status}
-                  onChange={(e) => onStatusChange(app.id, e.target.value)}
-                >
-                  <option value="Wishlist">Wishlist</option>
-                  <option value="Applied">Applied</option>
-                  <option value="Interview">Interview</option>
-                  <option value="Offer">Offer</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
+                <span className="status-dropdown" aria-label={`Application status: ${app.status}`}>
+                  {app.status}
+                </span>
               </div>
             </div>
           ))

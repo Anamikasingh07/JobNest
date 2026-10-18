@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import API from '../services/applicationService';
 import './Navbar.css';
 
 const Navbar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [theme, setTheme] = useState(localStorage.getItem('jobnest_theme') || 'light');
   const [currentUser, setCurrentUser] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const isRecruiter = ['recruiter', 'employer'].includes((currentUser?.role || '').toLowerCase());
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -24,6 +28,19 @@ const Navbar = () => {
       setCurrentUser(null);
     }
   }, [location]);
+
+  useEffect(() => {
+    if (!currentUser || isRecruiter) {
+      setNotifications([]);
+      return undefined;
+    }
+    const loadNotifications = () => API.get('/notifications')
+      .then(({ data }) => setNotifications(Array.isArray(data) ? data : []))
+      .catch(() => {});
+    loadNotifications();
+    const timer = window.setInterval(loadNotifications, 15000);
+    return () => window.clearInterval(timer);
+  }, [currentUser, isRecruiter]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -53,6 +70,7 @@ const Navbar = () => {
 
     // 1. Clear session storage
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('user');
     localStorage.removeItem('token');
     sessionStorage.clear();
 
@@ -64,11 +82,24 @@ const Navbar = () => {
     navigate('/auth');
   };
 
+  const openNotification = async (notification) => {
+    if (!notification.readAt) {
+      try {
+        const { data } = await API.patch(`/notifications/${notification._id}/read`);
+        setNotifications((current) => current.map((item) => item._id === data._id ? data : item));
+      } catch (error) {
+        console.error('Could not mark notification as read:', error);
+      }
+    }
+    setNotificationsOpen(false);
+    navigate('/tracker');
+  };
+
   return (
     <header className="top-navbar">
       <div className="nav-brand">
         <NavLink
-          to={currentUser?.role === 'employer' ? '/admin/dashboard' : '/tracker'}
+          to={isRecruiter ? '/admin/dashboard' : '/tracker'}
           className="brand-logo"
         >
           JobNest
@@ -76,7 +107,7 @@ const Navbar = () => {
       </div>
 
       <nav className="nav-links">
-        {currentUser?.role === 'employer' ? (
+        {isRecruiter ? (
           <>
             <NavLink
               to="/admin/dashboard"
@@ -147,12 +178,28 @@ const Navbar = () => {
           )}
         </button>
 
-        <button className="btn-icon-square" type="button" title="Notifications">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-          </svg>
-        </button>
+        {!isRecruiter && (
+          <div className="notification-wrapper">
+            <button className="btn-icon-square notification-bell" type="button" title="Notifications" aria-label="Notifications" onClick={() => setNotificationsOpen((open) => !open)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              {notifications.some((notification) => !notification.readAt) && <span className="notification-unread-dot" />}
+            </button>
+            {notificationsOpen && (
+              <div className="notifications-menu">
+                <div className="notifications-menu-header">Notifications</div>
+                {notifications.length ? notifications.map((notification) => (
+                  <button type="button" key={notification._id} className={`notification-item ${notification.readAt ? '' : 'unread'}`} onClick={() => openNotification(notification)}>
+                    <span>{notification.message}</span>
+                    <small>{new Date(notification.createdAt).toLocaleString()}</small>
+                  </button>
+                )) : <p className="notifications-empty">No application updates yet.</p>}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="profile-wrapper" ref={dropdownRef}>
           <button
@@ -166,7 +213,7 @@ const Navbar = () => {
             <div className="user-meta">
               <span className="user-name">{currentUser?.name || 'Name'}</span>
               <span className="user-role-label">
-                {currentUser?.role === 'employer' ? 'Recruiter' : 'Candidate'}
+                {isRecruiter ? 'Recruiter' : 'Candidate'}
               </span>
             </div>
           </button>

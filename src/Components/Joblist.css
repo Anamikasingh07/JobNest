@@ -133,6 +133,12 @@
   margin: 0 0 10px 0;
 }
 
+.card-posted-age, .detail-posted-age {
+  margin: 0 0 10px;
+  color: #6B7280 !important;
+  font-size: 12px;
+}
+
 .card-salary-badge {
   display: inline-block;
   background-color: #F3F4F6 !important;
@@ -201,6 +207,7 @@
   font-weight: 700;
   cursor: pointer;
 }
+.job-applied-label { display: inline-flex; min-height: 44px; box-sizing: border-box; align-items: center; padding: 0 22px; border: 1px solid #a7f3d0; border-radius: 8px; background: #ecfdf5; color: #047857; font-size: 15px; font-weight: 750; }
 
 .detail-divider {
   border: none;
@@ -228,6 +235,19 @@
   font-size: 14px;
   line-height: 1.6;
 }
+
+.job-skill-match { margin: 18px 0 24px; padding: 16px; border: 1px solid #dbe5f3; border-radius: 10px; background: #f8fbff; }
+.job-skill-match h3 { margin-top: 0; }
+.job-match-score { color: #1D4F9F !important; font-size: 18px !important; font-weight: 800; }
+.job-match-skill-groups { display: grid; gap: 12px; margin-top: 14px; }
+.job-match-skill-groups > div > div { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 7px; color: #667085; font-size: 13px; }
+.job-match-skill { display: inline-block; padding: 5px 9px; border-radius: 20px; font-size: 12px; font-weight: 650; }
+.job-match-skill.matched { background: #dcfce7; color: #166534; }
+.job-match-skill.missing { background: #fff1f2; color: #9f1239; }
+.job-match-legend { display: flex; flex-wrap: wrap; gap: 7px; }
+.job-card-required-skills { display: flex; flex-wrap: wrap; gap: 5px; margin: 0 0 10px; }
+.job-card-required-skills .job-match-skill { padding: 3px 7px; font-size: 10px; }
+.job-card-no-skills { color: #6b7280; font-size: 11px; }
 
 .no-selection-placeholder {
   display: flex;

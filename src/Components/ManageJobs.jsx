@@ -9,6 +9,9 @@ const ManageJobs = () => {
 
   const [formData, setFormData] = useState({
     title: '',
+    companyName: '',
+    skills: '',
+    experienceLevel: 'Any',
     location: '',
     workMode: 'Remote',
     type: 'Full-time',
@@ -18,6 +21,9 @@ const ManageJobs = () => {
 
   useEffect(() => {
     fetchMyJobs();
+    API.get('/auth/profile').then(({ data }) => {
+      if (data.companyName) setFormData((current) => ({ ...current, companyName: data.companyName }));
+    }).catch(() => {});
   }, []);
 
   const fetchMyJobs = async () => {
@@ -37,6 +43,9 @@ const ManageJobs = () => {
       setShowModal(false);
       setFormData({
         title: '',
+        companyName: '',
+        skills: '',
+        experienceLevel: 'Any',
         location: '',
         workMode: 'Remote',
         type: 'Full-time',
@@ -48,6 +57,18 @@ const ManageJobs = () => {
       alert(err.response?.data?.message || err.response?.data?.error || 'Failed to post job');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleJobStatus = async (job) => {
+    const status = job.status === 'Closed' ? 'Open' : 'Closed';
+    try {
+      const response = await API.put(`/jobs/${job._id}/status`, { status });
+      setMyJobs((currentJobs) => currentJobs.map((currentJob) =>
+        currentJob._id === job._id ? response.data.job : currentJob
+      ));
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update job posting.');
     }
   };
 
@@ -74,12 +95,15 @@ const ManageJobs = () => {
               <div key={job._id} className="recruiter-job-card">
                 <div className="card-top-row">
                   <span className={`status-pill ${job.status ? job.status.toLowerCase() : 'open'}`}>{job.status || 'Open'}</span>
-                  <span className="card-type-tag">{job.type}</span>
+                  <span className="card-type-tag">{job.employmentType || job.type || 'Full-time'}</span>
                 </div>
                 <h3 className="job-card-title">{job.title}</h3>
-                <p className="job-card-company">{job.company}</p>
+                <p className="job-card-company">{job.companyName || job.company}</p>
                 <p className="job-card-meta">{job.location} • {job.workMode}</p>
                 <p className="job-card-salary">{job.salary}</p>
+                <button type="button" className={`btn-job-status ${job.status === 'Closed' ? 'republish' : ''}`} onClick={() => handleToggleJobStatus(job)}>
+                  {job.status === 'Closed' ? 'Republish job' : 'Close posting'}
+                </button>
               </div>
             ))}
           </div>
@@ -104,6 +128,17 @@ const ManageJobs = () => {
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   required
                 />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group flex-1">
+                  <label>Company Name</label>
+                  <input type="text" value={formData.companyName} onChange={(e) => setFormData({ ...formData, companyName: e.target.value })} placeholder="Company name" required />
+                </div>
+                <div className="form-group flex-1">
+                  <label>Required Skills</label>
+                  <input type="text" value={formData.skills} onChange={(e) => setFormData({ ...formData, skills: e.target.value })} placeholder="React, JavaScript, Node.js" required />
+                </div>
               </div>
 
               <div className="form-row">
@@ -155,6 +190,16 @@ const ManageJobs = () => {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label>Experience Level</label>
+                <select value={formData.experienceLevel} onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })}>
+                  <option value="Any">Any experience level</option>
+                  <option value="Entry Level">Entry Level</option>
+                  <option value="Intermediate (1-3 yrs)">Intermediate (1-3 yrs)</option>
+                  <option value="Senior Level">Senior Level</option>
+                </select>
               </div>
 
               <div className="form-group">

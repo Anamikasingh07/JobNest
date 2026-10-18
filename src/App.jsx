@@ -18,6 +18,7 @@ function App() {
       <Routes>
         {/* Focused Apply Route without Navbar header */}
         <Route path="/jobs/:id/apply" element={<ApplyPage />} />
+        <Route path="/auth" element={<AuthPage />} />
 
         {/* Regular Routes wrapped with Top Navbar */}
         <Route
@@ -28,7 +29,6 @@ function App() {
               <main className="main-content">
                 <Routes>
                   <Route path="/" element={<Navigate to="/tracker" replace />} />
-                  <Route path="/auth" element={<AuthPage />} />
                   <Route path="/tracker" element={<TrackerPage />} />
                   <Route path="/jobs" element={<Joblist />} />
                   <Route path="/ai-assistant" element={<AIPage />} />

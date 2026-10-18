@@ -319,3 +319,17 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+.tracker-details-backdrop { position: fixed; z-index: 11000; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(16, 24, 40, .58); }
+.tracker-details-card { width: min(700px, 100%); max-height: 88vh; overflow: auto; box-sizing: border-box; padding: 24px; border-radius: 14px; background: var(--bg-card, #fff); color: var(--text-primary, #111827); box-shadow: 0 20px 60px #10182840; }
+.tracker-details-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; padding-bottom: 14px; border-bottom: 1px solid var(--bg-subtle, #e6ecf6); }
+.tracker-details-header h2 { margin: 0; font-size: 22px; }
+.tracker-details-company { margin: 0 0 5px; color: var(--primary-blue, #1d4f9f); font-weight: 700; }
+.tracker-details-close { width: 34px; height: 34px; border: 1px solid #d1d5db; border-radius: 8px; background: transparent; font-size: 22px; cursor: pointer; }
+.tracker-job-detail-section { padding: 15px 0; border-bottom: 1px solid var(--bg-subtle, #e6ecf6); }
+.tracker-job-detail-section h3 { margin: 0 0 9px; font-size: 15px; }
+.tracker-job-detail-section p { white-space: pre-line; font-size: 13px; line-height: 1.6; }
+.tracker-requested-skills { display: flex; flex-wrap: wrap; gap: 7px; }
+.tracker-requested-skills span { padding: 5px 9px; border-radius: 16px; background: #edf4ff; color: #2456a3; font-size: 12px; font-weight: 650; }
+.tracker-screening-question { padding: 10px 12px; margin-top: 8px; border-radius: 8px; background: var(--bg-subtle, #f3f4f6); font-size: 13px; }
+.tracker-screening-question p { margin-bottom: 0; }

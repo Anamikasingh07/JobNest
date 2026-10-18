@@ -1,70 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, NavLink } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import API from '../services/applicationService';
 import './ApplyPage.css';
-
-const SAMPLE_JOBS = [
-  {
-    id: '1',
-    title: 'Frontend Developer - React.js',
-    company: 'Google',
-    location: 'Bengaluru',
-    type: 'Full-time',
-    questions: [
-      { id: 'q1', text: 'How many years of experience do you have with React.js?', required: true },
-      { id: 'q2', text: 'Are you comfortable working in a hybrid model in Bengaluru?', required: true },
-      { id: 'q3', text: 'What is your notice period?', required: false }
-    ]
-  },
-  {
-    id: '2',
-    title: 'Full Stack Software Engineer',
-    company: 'Microsoft',
-    location: 'Hyderabad',
-    type: 'Full-time',
-    questions: [
-      { id: 'q1', text: 'Do you have experience with Node.js microservices?', required: true },
-      { id: 'q2', text: 'What is your expected CTC?', required: true }
-    ]
-  },
-  {
-    id: '3',
-    title: 'Junior Frontend Intern',
-    company: 'Acme Tech',
-    location: 'Delhi',
-    type: 'Internship',
-    questions: [] // Tests skipping Step 4 (Employer Questions)
-  },
-  {
-    id: '4',
-    title: 'Senior UI/UX Engineer',
-    company: 'Adobe',
-    location: 'Noida (Remote)',
-    type: 'Full-time',
-    questions: [
-      { id: 'q1', text: 'Please share a link to your Figma portfolio or personal website.', required: true }
-    ]
-  },
-  {
-    id: '5',
-    title: 'Backend Node.js Developer',
-    company: 'Amazon',
-    location: 'Bengaluru',
-    type: 'Full-time',
-    questions: [
-      { id: 'q1', text: 'How many years of AWS / Cloud deployment experience do you have?', required: true },
-      { id: 'q2', text: 'What is your current notice period (in days)?', required: true }
-    ]
-  }
-];
 
 const ApplyPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [job, setJob] = useState(null);
-  const [step, setStep] = useState(1); // 1: Contact, 2: Resume, 3: Cover Letter, 4: Employer Questions, 5: Review, 6: Confirmation
+  const [step, setStep] = useState(1); // 1: Contact, 2: Resume, 3: Cover Letter, 4: Questions, 5: Review, 6: Confirmation
+  const [validationError, setValidationError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  // Step 1: Contact Info
+  // Step 1: Contact Details
   const [contactInfo, setContactInfo] = useState({
     fullName: 'Test Name',
     email: 'test@email.com',
@@ -72,21 +20,20 @@ const ApplyPage = () => {
     location: 'Delhi, India'
   });
 
-  // Step 2: Resume
-  const [resumeChoice, setResumeChoice] = useState('saved'); // 'saved' | 'upload'
+  // Step 2: Resume Selection
+  const [resumeChoice, setResumeChoice] = useState('saved');
   const [savedResumeName] = useState('Test_Name_Resume.pdf');
   const [newResumeFile, setNewResumeFile] = useState(null);
   const [updateProfileResume, setUpdateProfileResume] = useState(false);
 
   // Step 3: Cover Letter
-  const [coverLetterMode, setCoverLetterMode] = useState('write'); // 'write' | 'none'
   const [coverLetterText, setCoverLetterText] = useState('');
 
-  // Step 4: Questions Answers
+  // Step 4: Employer Questions Responses
   const [answers, setAnswers] = useState({});
 
   useEffect(() => {
-    // Prefill user contact details from active session if present
+    // 1. Prefill logged-in candidate profile data
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     if (currentUser.name || currentUser.email) {
       setContactInfo((prev) => ({
@@ -96,22 +43,40 @@ const ApplyPage = () => {
       }));
     }
 
-    const foundJob = SAMPLE_JOBS.find((j) => j.id === id) || {
-      id: id || '1',
-      title: 'Frontend Developer - React.js',
-      company: 'Google',
-      location: 'Bengaluru',
-      type: 'Full-time',
-      questions: [
-        { id: 'q1', text: 'How many years of experience do you have with React.js?', required: true },
-        { id: 'q2', text: 'What is your notice period?', required: false }
-      ]
+    // 2. Fetch Job Details from backend (with fallback to local check)
+    const fetchJobDetails = async () => {
+      try {
+        const res = await API.get(`/jobs/${id}`);
+        setJob(res.data);
+      } catch (err) {
+        setValidationError(err.response?.status === 404
+          ? 'This job posting was deleted or is no longer available.'
+          : 'Could not load this job posting. Please try again.');
+      }
     };
-    setJob(foundJob);
+
+    if (id) fetchJobDetails();
   }, [id]);
 
+  // Handle Stepper Validation & Transitions
   const handleNextStep = () => {
-    // Skip step 4 if no employer questions
+    setValidationError('');
+
+    // ENFORCE MANDATORY QUESTION VALIDATION AT STEP 4
+    if (step === 4 && job?.questions && job.questions.length > 0) {
+      for (const q of job.questions) {
+        if (q.required) {
+          const qId = q.id || q._id;
+          const userAns = answers[qId] || answers[q.text];
+          if (!userAns || userAns.trim() === '') {
+            setValidationError(`Please fill out the required question: "${q.text || q.questionText}"`);
+            return;
+          }
+        }
+      }
+    }
+
+    // Skip Step 4 if no screening questions exist for this role
     if (step === 3 && (!job?.questions || job.questions.length === 0)) {
       setStep(5);
     } else {
@@ -120,6 +85,7 @@ const ApplyPage = () => {
   };
 
   const handlePrevStep = () => {
+    setValidationError('');
     if (step === 5 && (!job?.questions || job.questions.length === 0)) {
       setStep(3);
     } else {
@@ -129,46 +95,95 @@ const ApplyPage = () => {
 
   const handleGenerateAICoverLetter = () => {
     setCoverLetterText(
-      `Dear Hiring Manager at ${job?.company || 'the company'},\n\nI am writing to express my strong enthusiasm for the ${job?.title || 'position'} role. With my background in frontend engineering and building web applications in React.js, I am confident in delivering high quality work for your team.\n\nThank you for considering my application.\n\nBest regards,\n${contactInfo.fullName}`
+      `Dear Hiring Manager at ${job?.company || job?.companyName || 'the company'},\n\nI am writing to express my strong enthusiasm for the ${job?.title || 'position'} role. With my background in software engineering, I am confident in delivering high quality work for your team.\n\nThank you for considering my application.\n\nBest regards,\n${contactInfo.fullName}`
     );
   };
 
-  const handleSubmitApplication = () => {
-    if (!job) return;
+  const handleSubmitApplication = async () => {
+    const jobIdToSubmit = job?._id || job?.id || id;
+    if (!jobIdToSubmit || jobIdToSubmit === 'undefined') {
+      setValidationError('This job posting is unavailable. Return to Find Jobs and choose an active listing.');
+      return;
+    }
+    if (resumeChoice === 'upload' && !newResumeFile) {
+      setValidationError('Choose a resume file before submitting your application.');
+      setStep(2);
+      return;
+    }
+    setValidationError('');
+    setSubmitting(true);
 
-    // Add to Tracker applications in LocalStorage
-    const trackerApps = JSON.parse(localStorage.getItem('tracker_applications') || '[]');
-    const newTrackerCard = {
-      id: job.id,
-      jobTitle: job.title,
-      companyName: job.company,
-      location: job.location,
-      salary: '18–24 LPA',
-      status: 'Applied',
-      source: 'Internal',
-      appliedDaysAgo: 0,
-      badgeText: 'Applied Today',
-      logoLetter: job.company.charAt(0),
-      logoBg: '#1D4F9F',
-      notes: coverLetterText ? `Cover Letter Note: ${coverLetterText.slice(0, 80)}...` : 'Applied via direct application portal.'
-    };
+    // Format screening answers array for the database
+    const formattedAnswers = (job.questions || []).map((q) => ({
+      questionText: q.text || q.questionText,
+      answerText: answers[q.id || q._id] || answers[q.text] || ''
+    }));
 
-    localStorage.setItem(
-      'tracker_applications',
-      JSON.stringify([...trackerApps.filter((a) => a.id !== job.id), newTrackerCard])
-    );
+    try {
+      let resumeData = '';
+      if (resumeChoice === 'upload' && newResumeFile) {
+        resumeData = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+          reader.onerror = () => reject(new Error('Could not read the selected resume file.'));
+          reader.readAsDataURL(newResumeFile);
+        });
+      }
 
-    setStep(6);
+      // Store the resume and candidate details with the application for recruiter review.
+      await API.post(`/applications/${jobIdToSubmit}`, {
+        answers: formattedAnswers,
+        applicantDetails: contactInfo,
+        resume: {
+          name: resumeChoice === 'upload' ? newResumeFile.name : savedResumeName,
+          contentType: resumeChoice === 'upload' ? newResumeFile.type : '',
+          data: resumeData
+        },
+        coverLetter: coverLetterText
+      });
+
+      // 2. Sync to local tracker state for frontend continuity
+      const signedInUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      const trackerStorageKey = `tracker_applications:${signedInUser._id || signedInUser.email || 'guest'}`;
+      const trackerApps = JSON.parse(localStorage.getItem(trackerStorageKey) || '[]');
+      const newTrackerCard = {
+        id: jobIdToSubmit,
+        jobTitle: job.title,
+        companyName: job.company || job.companyName,
+        location: job.location,
+        salary: job.salary || 'Competitive',
+        status: 'Applied',
+        source: 'Internal',
+        appliedDaysAgo: 0,
+        badgeText: 'Applied Today',
+        logoLetter: (job.company || job.companyName || 'J').charAt(0),
+        logoBg: '#1D4F9F',
+        notes: coverLetterText ? `Cover Letter: ${coverLetterText.slice(0, 80)}...` : 'Applied via direct portal.'
+      };
+
+      localStorage.setItem(
+        trackerStorageKey,
+        JSON.stringify([...trackerApps.filter((a) => a.id !== jobIdToSubmit), newTrackerCard])
+      );
+
+      setStep(6);
+    } catch (err) {
+      setValidationError(
+        err.response?.data?.message || err.message || 'Could not submit your application. Please try again.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="focused-apply-page">
-      {/* Minimal Header (No Main Navigation) */}
+      {/* Header */}
       <header className="minimal-apply-header">
         <div className="header-left">
           <span className="apply-brand-logo">JobNest</span>
           <div className="job-title-pill">
-            <strong>{job?.title}</strong> · {job?.company}
+            <strong>{job?.title}</strong> · {job?.company || job?.companyName}
           </div>
         </div>
 
@@ -177,7 +192,7 @@ const ApplyPage = () => {
         </button>
       </header>
 
-      {/* Main Container */}
+      {/* Main Form Body */}
       <main className="apply-body-container">
         {step < 6 && (
           <div className="step-indicator-bar">
@@ -191,11 +206,26 @@ const ApplyPage = () => {
           </div>
         )}
 
+        {/* Global Error Banner */}
+        {validationError && (
+          <div className="validation-error-banner" style={{
+            backgroundColor: '#fee2e2',
+            color: '#b91c1c',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            marginBottom: '16px',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            ⚠️ {validationError}
+          </div>
+        )}
+
         {/* STEP 1: Contact Information */}
         {step === 1 && (
           <div className="apply-step-card">
             <h2>Contact information</h2>
-            <p className="step-subtitle">Prefilled from your profile. Check that your details are up to date.</p>
+            <p className="step-subtitle">Check that your details are up to date.</p>
 
             <div className="form-group">
               <label>Full name</label>
@@ -246,7 +276,7 @@ const ApplyPage = () => {
         {step === 2 && (
           <div className="apply-step-card">
             <h2>Select a resume</h2>
-            <p className="step-subtitle">Upload a resume or select a saved document for this application.</p>
+            <p className="step-subtitle">Upload a resume or select a saved document.</p>
 
             <div className="resume-options-list">
               <label className={`resume-radio-card ${resumeChoice === 'saved' ? 'active' : ''}`}>
@@ -281,7 +311,17 @@ const ApplyPage = () => {
                 <input
                   type="file"
                   accept=".pdf,.doc,.docx"
-                  onChange={(e) => setNewResumeFile(e.target.files[0])}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file && file.size > 5 * 1024 * 1024) {
+                      setValidationError('Resume must be 5 MB or smaller.');
+                      e.target.value = '';
+                      setNewResumeFile(null);
+                      return;
+                    }
+                    setValidationError('');
+                    setNewResumeFile(file || null);
+                  }}
                 />
                 {newResumeFile && <p className="uploaded-filename">Selected: {newResumeFile.name}</p>}
               </div>
@@ -296,7 +336,6 @@ const ApplyPage = () => {
                 />
                 Update my primary profile resume with this document
               </label>
-              <p className="checkbox-hint">If unchecked, this resume will be used only for this application.</p>
             </div>
 
             <div className="step-nav-actions">
@@ -314,7 +353,7 @@ const ApplyPage = () => {
         {step === 3 && (
           <div className="apply-step-card">
             <h2>Add a cover letter (optional)</h2>
-            <p className="step-subtitle">Introduce yourself to the recruiter or let AI generate a draft.</p>
+            <p className="step-subtitle">Introduce yourself to the recruiter or generate a draft with AI.</p>
 
             <div className="cover-letter-toolbar">
               <button
@@ -346,25 +385,29 @@ const ApplyPage = () => {
           </div>
         )}
 
-        {/* STEP 4: Employer Questions */}
+        {/* STEP 4: Employer Questions (STRICT VALIDATION APPLIED) */}
         {step === 4 && job?.questions && job.questions.length > 0 && (
           <div className="apply-step-card">
             <h2>Employer questions</h2>
-            <p className="step-subtitle">Please answer the recruiter's specific questions for this role.</p>
+            <p className="step-subtitle">Please answer all required questions from the employer.</p>
 
-            {job.questions.map((q) => (
-              <div key={q.id} className="form-group">
-                <label>
-                  {q.text} {q.required && <span className="required-star">*</span>}
-                </label>
-                <input
-                  type="text"
-                  placeholder="Your response..."
-                  value={answers[q.id] || ''}
-                  onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
-                />
-              </div>
-            ))}
+            {job.questions.map((q) => {
+              const key = q.id || q._id || q.text;
+              return (
+                <div key={key} className="form-group">
+                  <label>
+                    {q.text || q.questionText} {q.required && <span className="required-star" style={{ color: '#ef4444' }}>*</span>}
+                  </label>
+                  <input
+                    type="text"
+                    required={q.required}
+                    placeholder="Your response..."
+                    value={answers[key] || ''}
+                    onChange={(e) => setAnswers({ ...answers, [key]: e.target.value })}
+                  />
+                </div>
+              );
+            })}
 
             <div className="step-nav-actions">
               <button type="button" className="btn-secondary-back" onClick={handlePrevStep}>
@@ -381,7 +424,7 @@ const ApplyPage = () => {
         {step === 5 && (
           <div className="apply-step-card">
             <h2>Review your application</h2>
-            <p className="step-subtitle">Please review your information carefully. Applications cannot be edited after submission.</p>
+            <p className="step-subtitle">Review your responses before submitting.</p>
 
             <div className="review-section-box">
               <div className="review-header flex">
@@ -417,11 +460,14 @@ const ApplyPage = () => {
                   <h3>Employer Questions</h3>
                   <button type="button" className="btn-edit-link" onClick={() => setStep(4)}>Edit</button>
                 </div>
-                {job.questions.map((q) => (
-                  <p key={q.id}>
-                    <strong>{q.text}:</strong> {answers[q.id] || 'N/A'}
-                  </p>
-                ))}
+                {job.questions.map((q) => {
+                  const key = q.id || q._id || q.text;
+                  return (
+                    <p key={key}>
+                      <strong>{q.text || q.questionText}:</strong> {answers[key] || 'N/A'}
+                    </p>
+                  );
+                })}
               </div>
             )}
 
@@ -429,8 +475,13 @@ const ApplyPage = () => {
               <button type="button" className="btn-secondary-back" onClick={handlePrevStep}>
                 Back
               </button>
-              <button type="button" className="btn-primary-submit" onClick={handleSubmitApplication}>
-                Submit your application
+              <button
+                type="button"
+                disabled={submitting}
+                className="btn-primary-submit"
+                onClick={handleSubmitApplication}
+              >
+                {submitting ? 'Submitting...' : 'Submit your application'}
               </button>
             </div>
           </div>
@@ -442,7 +493,7 @@ const ApplyPage = () => {
             <div className="success-icon-circle">✓</div>
             <h2>Application submitted!</h2>
             <p className="step-subtitle">
-              Your application for <strong>{job?.title}</strong> at <strong>{job?.company}</strong> has been sent. This job is now added to your <strong>Application Tracker</strong>.
+              Your application for <strong>{job?.title}</strong> at <strong>{job?.company || job?.companyName}</strong> has been sent. This job is now added to your <strong>Application Tracker</strong>.
             </p>
 
             <div className="confirmation-actions">
@@ -453,24 +504,6 @@ const ApplyPage = () => {
                 Find More Jobs
               </button>
             </div>
-
-            {/* Suggested Similar Jobs */}
-            <div className="suggested-jobs-section">
-              <h3>Suggested similar jobs</h3>
-              <div className="suggested-jobs-grid">
-                <div className="suggested-job-tile" onClick={() => navigate('/jobs')}>
-                  <h4>Full Stack Software Engineer</h4>
-                  <p>Microsoft · Hyderabad</p>
-                  <span className="pill-link">View Job →</span>
-                </div>
-                <div className="suggested-job-tile" onClick={() => navigate('/jobs')}>
-                  <h4>React.js Frontend Engineer</h4>
-                  <p>Amazon · Remote</p>
-                  <span className="pill-link">View Job →</span>
-                </div>
-              </div>
-            </div>
-            
           </div>
         )}
       </main>

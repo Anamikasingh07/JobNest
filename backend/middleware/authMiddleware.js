@@ -1,30 +1,20 @@
 const jwt = require('jsonwebtoken');
 
-const protect = (req, res, next) => {
-  let token;
-
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'jobnest_secret');
-      req.user = decoded;
-      return next();
-    } catch (error) {
-      return res.status(401).json({ message: 'Not authorized, token failed' });
+const protect = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Not authorized, no token provided' });
     }
-  }
 
-  if (!token) {
-    return res.status(401).json({ message: 'Not authorized, no token' });
-  }
-};
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
 
-const recruiterOnly = (req, res, next) => {
-  if (req.user && req.user.role === 'employer') {
+    req.user = decoded;
     next();
-  } else {
-    res.status(403).json({ message: 'Access denied: Recruiter permissions required.' });
+  } catch (err) {
+    return res.status(401).json({ message: 'Token invalid or expired', error: err.message });
   }
 };
 
-module.exports = { protect, recruiterOnly };
+module.exports = { protect };

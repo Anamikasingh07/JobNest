@@ -1,24 +1,25 @@
 const mongoose = require('mongoose');
 
-const jobSchema = new mongoose.Schema(
-  {
-    employerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    title: { type: String, required: true },
-    company: { type: String, required: true },
-    location: { type: String, required: true },
-    workMode: { type: String, enum: ['Remote', 'Hybrid', 'On-site'], default: 'Remote' },
-    type: { type: String, enum: ['Full-time', 'Part-time', 'Contract', 'Internship'], default: 'Full-time' },
-    salary: { type: String, required: true },
-    description: { type: String, required: true },
-    questions: [
-      {
-        text: { type: String, required: true },
-        required: { type: Boolean, default: false }
-      }
-    ],
-    status: { type: String, enum: ['Open', 'Closed'], default: 'Open' }
-  },
-  { timestamps: true }
-);
+const jobSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  companyName: { type: String, default: 'Company' },
+  location: { type: String, required: true },
+  description: { type: String, required: true },
+  skills: { type: [String], default: [] },
+  salary: { type: String, default: '' },
+  workMode: { type: String, default: 'Remote' },
+  employmentType: { type: String, default: 'Full-time' },
+  experienceLevel: { type: String, enum: ['Any', 'Entry Level', 'Intermediate (1-3 yrs)', 'Senior Level'], default: 'Any' },
+  status: { type: String, enum: ['Open', 'Closed'], default: 'Open' },
+  postedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  recruiter: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  questions: [
+    {
+      questionText: { type: String, required: true },
+      required: { type: Boolean, default: false }
+    }
+  ],
+  createdAt: { type: Date, default: Date.now }
+});
 
-module.exports = mongoose.model('Job', jobSchema);
+module.exports = mongoose.model('Job', mongoose.models.Job || jobSchema);

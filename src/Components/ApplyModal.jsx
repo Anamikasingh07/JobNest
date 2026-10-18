@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import api from '../api/axiosInstance';
+import API from '../services/applicationService';
 
 const ApplyModal = ({ job, onClose, onSuccess }) => {
   const [answers, setAnswers] = useState(
@@ -34,7 +34,7 @@ const ApplyModal = ({ job, onClose, onSuccess }) => {
 
     try {
       setSubmitting(true);
-      await api.post(`/api/applications/apply/${job._id}`, { answers: payloadAnswers });
+      await API.post(`/applications/${job._id}`, { answers: payloadAnswers });
       onSuccess();
       onClose();
     } catch (err) {

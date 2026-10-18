@@ -74,6 +74,15 @@
   border-radius: 12px;
 }
 
+.status-pill.closed {
+  background-color: #FEE2E2;
+  color: #991B1B;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+
 .card-type-tag {
   font-size: 12px;
   color: #6B7280;
@@ -213,3 +222,7 @@
   color: #FFFFFF;
   cursor: pointer;
 }
+.btn-job-status { margin-top: 12px; padding: 8px 12px; border: 1px solid #fecaca; border-radius: 7px; background: #fff7f7; color: #b42318; font-weight: 600; cursor: pointer; }
+.btn-job-status:hover { background: #fee2e2; }
+.btn-job-status.republish { border-color: #A7F3D0; background: #ECFDF5; color: #047857; }
+.btn-job-status.republish:hover { background: #D1FAE5; }
