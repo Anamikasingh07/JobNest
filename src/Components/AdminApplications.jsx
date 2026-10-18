@@ -1,88 +1,90 @@
 import React, { useState, useEffect } from 'react';
-import API from '../services/applicationService';
-import './AdminApplications.css';
+import axios from 'axios';
 
-const AdminApplications = () => {
+const RecruiterApplicants = () => {
   const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [selectedApp, setSelectedApp] = useState(null);
 
   useEffect(() => {
-    fetchApplicants();
+    const fetchApplications = async () => {
+      try {
+        const res = await axios.get('/api/applications/recruiter', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        setApplications(res.data);
+      } catch (err) {
+        console.error('Error loading applications:', err);
+      }
+    };
+    fetchApplications();
   }, []);
 
-  const fetchApplicants = async () => {
-    try {
-      setLoading(true);
-      // Calls GET /api/applications/recruiter/applicants
-      const res = await API.get('/applications/recruiter/applicants');
-      
-      // If backend returns array directly or inside res.data.applications
-      const data = Array.isArray(res.data) ? res.data : res.data.applications || [];
-      setApplications(data);
-    } catch (err) {
-      console.error('Error fetching applications:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) return <div style={{ padding: '24px' }}>Loading applicants...</div>;
-
   return (
-    <div className="admin-app-page" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      <h2>Received Applications ({applications.length})</h2>
+    <div className="p-6 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Received Applications ({applications.length})</h1>
 
-      {applications.length === 0 ? (
-        <p style={{ marginTop: '16px', color: '#6B7280' }}>
-          No candidates have applied to your jobs yet. (Note: Ensure the candidate applied to a job created while logged in under this recruiter account).
-        </p>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-          {applications.map((app) => (
-            <div
-              key={app._id}
-              style={{
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #E5E7EB',
-                borderRadius: '8px',
-                padding: '16px 20px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}
-            >
-              <div>
-                <h3 style={{ margin: '0 0 4px 0', color: '#111827' }}>
-                  {app.applicantName || app.candidateId?.name || 'Applicant'}
-                </h3>
-                <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#1D4F9F', fontWeight: '600' }}>
-                  Applied for: {app.jobId?.title || 'Role'} ({app.jobId?.company})
-                </p>
-                <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>
-                  Email: {app.applicantEmail || app.candidateId?.email}
-                </p>
-              </div>
+      <div className="bg-white border rounded-lg overflow-hidden">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-gray-100 border-b">
+            <tr>
+              <th className="p-3">Candidate</th>
+              <th className="p-3">Applied Job</th>
+              <th className="p-3">Date</th>
+              <th className="p-3">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {applications.map(app => (
+              <tr key={app._id} className="border-b">
+                <td className="p-3 font-medium">{app.candidate?.name || 'N/A'}</td>
+                <td className="p-3">{app.job?.title || 'N/A'}</td>
+                <td className="p-3">{new Date(app.appliedAt).toLocaleDateString()}</td>
+                <td className="p-3">
+                  <button
+                    onClick={() => setSelectedApp(app)}
+                    className="px-3 py-1 bg-gray-100 border rounded hover:bg-gray-200"
+                  >
+                    Review Candidate
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-              <div>
-                <span
-                  style={{
-                    backgroundColor: '#E0F2FE',
-                    color: '#0369A1',
-                    padding: '6px 12px',
-                    borderRadius: '12px',
-                    fontSize: '12px',
-                    fontWeight: '600'
-                  }}
-                >
-                  {app.status || 'Applied'}
-                </span>
-              </div>
+      {/* Review Modal */}
+      {selectedApp && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-lg max-w-lg w-full space-y-4">
+            <h3 className="text-xl font-bold">{selectedApp.candidate?.name}'s Application</h3>
+            <p className="text-sm text-gray-600">Email: {selectedApp.candidate?.email}</p>
+
+            <div>
+              <h4 className="font-semibold text-sm mb-2">Submitted Answers:</h4>
+              {selectedApp.answers && selectedApp.answers.length > 0 ? (
+                selectedApp.answers.map((ans, idx) => (
+                  <div key={idx} className="p-2 bg-gray-50 border rounded mb-2 text-sm">
+                    <p className="font-semibold text-gray-700">{ans.questionText}</p>
+                    <p className="text-gray-900">{ans.answerText}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No custom screening questions answered.</p>
+              )}
             </div>
-          ))}
+
+            <button
+              onClick={() => setSelectedApp(null)}
+              className="w-full py-2 bg-blue-600 text-white rounded"
+            >
+              Close
+            </button>
+          </div>
         </div>
       )}
     </div>
   );
 };
 
-export default AdminApplications;
+export default RecruiterApplicants;

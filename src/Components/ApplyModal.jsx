@@ -1,122 +1,99 @@
 import React, { useState } from 'react';
-import API from '../services/applicationService';
-import './ApplyModal.css';
+import api from '../api/axiosInstance';
 
 const ApplyModal = ({ job, onClose, onSuccess }) => {
-  const [step, setStep] = useState(1);
-  const [phone, setPhone] = useState('');
-  const [resumeUrl, setResumeUrl] = useState('');
-  const [coverLetter, setCoverLetter] = useState('');
   const [answers, setAnswers] = useState(
-    job.questions ? job.questions.map((q) => ({ question: q.text, answer: '' })) : []
+    (job?.questions || []).reduce((acc, q) => {
+      acc[q.questionText] = '';
+      return acc;
+    }, {})
   );
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleAnswerChange = (index, value) => {
-    const updated = [...answers];
-    updated[index].answer = value;
-    setAnswers(updated);
+  const handleInputChange = (questionText, value) => {
+    setAnswers(prev => ({ ...prev, [questionText]: value }));
   };
 
-  const handleSubmitApplication = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setErrorMsg('');
+    setError('');
+
+    // Frontend validation for required employer questions
+    for (const q of job?.questions || []) {
+      if (q.required && (!answers[q.questionText] || answers[q.questionText].trim() === '')) {
+        setError(`Please answer the required question: "${q.questionText}"`);
+        return;
+      }
+    }
+
+    const payloadAnswers = Object.keys(answers).map(qText => ({
+      questionText: qText,
+      answerText: answers[qText]
+    }));
 
     try {
-      await API.post('/applications/apply', {
-        jobId: job._id,
-        applicantPhone: phone,
-        resumeUrl: resumeUrl || 'https://example.com/resume.pdf',
-        coverLetter,
-        answers
-      });
-
-      if (onSuccess) onSuccess();
+      setSubmitting(true);
+      await api.post(`/api/applications/apply/${job._id}`, { answers: payloadAnswers });
+      onSuccess();
       onClose();
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || 'Failed to submit application.');
+      setError(err.response?.data?.message || 'Failed to submit application.');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
+ 
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="apply-modal-box" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>Apply for {job.title}</h3>
-          <p className="company-subtitle">{job.company}</p>
-          <button className="btn-close-x" onClick={onClose}>×</button>
-        </div>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl">
+        <h2 className="text-xl font-bold text-gray-800 mb-2">Apply for {job?.title}</h2>
+        <p className="text-sm text-gray-500 mb-4">{job?.companyName || 'Recruiter'}</p>
 
-        {errorMsg && <div className="apply-error-alert">{errorMsg}</div>}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg">
+            {error}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmitApplication} className="apply-form-steps">
-          {step === 1 && (
-            <div className="form-step">
-              <h4>Step 1: Contact & Resume Details</h4>
-              <div className="form-group">
-                <label>Phone Number</label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {job?.questions && job.questions.length > 0 ? (
+            job.questions.map((q, idx) => (
+              <div key={idx} className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  {q.questionText} {q.required && <span className="text-red-500">*</span>}
+                </label>
                 <input
                   type="text"
-                  placeholder="e.g. +91 9876543210"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
+                  required={q.required}
+                  value={answers[q.questionText] || ''}
+                  onChange={(e) => handleInputChange(q.questionText, e.target.value)}
+                  placeholder="Your answer..."
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <div className="form-group">
-                <label>Resume Link / Document URL</label>
-                <input
-                  type="text"
-                  placeholder="e.g. https://drive.google.com/your-resume"
-                  value={resumeUrl}
-                  onChange={(e) => setResumeUrl(e.target.value)}
-                />
-              </div>
-              <button type="button" className="btn-step-next" onClick={() => setStep(2)}>
-                Next: Additional Details →
-              </button>
-            </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-600">No additional screening questions required.</p>
           )}
 
-          {step === 2 && (
-            <div className="form-step">
-              <h4>Step 2: Cover Letter & Screening</h4>
-              <div className="form-group">
-                <label>Cover Letter</label>
-                <textarea
-                  rows="3"
-                  placeholder="Why are you a good fit for this role?"
-                  value={coverLetter}
-                  onChange={(e) => setCoverLetter(e.target.value)}
-                />
-              </div>
-
-              {answers.map((ans, idx) => (
-                <div key={idx} className="form-group">
-                  <label>{ans.question}</label>
-                  <input
-                    type="text"
-                    placeholder="Your answer..."
-                    value={ans.answer}
-                    onChange={(e) => handleAnswerChange(idx, e.target.value)}
-                  />
-                </div>
-              ))}
-
-              <div className="step-actions-row">
-                <button type="button" className="btn-step-back" onClick={() => setStep(1)}>
-                  ← Back
-                </button>
-                <button type="submit" className="btn-submit-apply" disabled={loading}>
-                  {loading ? 'Submitting Application...' : 'Submit Application'}
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="flex justify-end space-x-3 pt-4 border-t">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {submitting ? 'Submitting...' : 'Submit Application'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
