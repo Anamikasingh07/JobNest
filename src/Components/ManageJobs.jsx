@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../services/applicationService';
+import { getProfileCompletion } from '../utils/profileCompletion';
 import './ManageJobs.css';
 
 const ManageJobs = () => {
+  const navigate = useNavigate();
   const [myJobs, setMyJobs] = useState([]);
+  const [recruiterProfile, setRecruiterProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -22,9 +27,12 @@ const ManageJobs = () => {
   useEffect(() => {
     fetchMyJobs();
     API.get('/auth/profile').then(({ data }) => {
+      setRecruiterProfile(data);
       if (data.companyName) setFormData((current) => ({ ...current, companyName: data.companyName }));
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => setProfileLoading(false));
   }, []);
+
+  const profileCompletion = getProfileCompletion(recruiterProfile, 'recruiter');
 
   const fetchMyJobs = async () => {
     try {
@@ -79,10 +87,17 @@ const ManageJobs = () => {
           <h2>Company Job Postings</h2>
           <p className="subtitle">Manage active openings for your organization ({myJobs.length})</p>
         </div>
-        <button className="btn-create-job" onClick={() => setShowModal(true)}>
+        <button className="btn-create-job" disabled={profileLoading || !profileCompletion.complete} onClick={() => setShowModal(true)}>
           + Create Job Listing
         </button>
       </div>
+
+      {!profileLoading && !profileCompletion.complete && (
+        <div className="profile-completion-notice" role="status">
+          <div><strong>Complete your recruiter profile before posting a job.</strong><p>Still needed: {profileCompletion.missing.join(', ')}.</p></div>
+          <button type="button" onClick={() => navigate('/profile')}>Complete profile</button>
+        </div>
+      )}
 
       <div className="jobs-list-container">
         {myJobs.length === 0 ? (
@@ -158,6 +173,7 @@ const ManageJobs = () => {
                   <select
                     value={formData.workMode}
                     onChange={(e) => setFormData({ ...formData, workMode: e.target.value })}
+                    required
                   >
                     <option value="Remote">Remote</option>
                     <option value="Hybrid">Hybrid</option>
@@ -172,6 +188,7 @@ const ManageJobs = () => {
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    required
                   >
                     <option value="Full-time">Full-time</option>
                     <option value="Part-time">Part-time</option>
@@ -194,7 +211,7 @@ const ManageJobs = () => {
 
               <div className="form-group">
                 <label>Experience Level</label>
-                <select value={formData.experienceLevel} onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })}>
+                <select value={formData.experienceLevel} onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })} required>
                   <option value="Any">Any experience level</option>
                   <option value="Entry Level">Entry Level</option>
                   <option value="Intermediate (1-3 yrs)">Intermediate (1-3 yrs)</option>

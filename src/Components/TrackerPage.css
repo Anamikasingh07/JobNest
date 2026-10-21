@@ -333,3 +333,12 @@
 .tracker-requested-skills span { padding: 5px 9px; border-radius: 16px; background: #edf4ff; color: #2456a3; font-size: 12px; font-weight: 650; }
 .tracker-screening-question { padding: 10px 12px; margin-top: 8px; border-radius: 8px; background: var(--bg-subtle, #f3f4f6); font-size: 13px; }
 .tracker-screening-question p { margin-bottom: 0; }
+[data-theme='dark'] .kanban-column { border: 1px solid var(--border-color); background: #12171e; }
+[data-theme='dark'] .tracker-card-tile { border: 1px solid var(--border-color); background: var(--bg-card); box-shadow: 0 5px 16px #0003; }
+[data-theme='dark'] .empty-column-box { border: 1px dashed var(--border-color); background: #161b22; color: var(--text-muted); }
+[data-theme='dark'] .card-footer-flex,
+[data-theme='dark'] .tracker-details-header,
+[data-theme='dark'] .tracker-job-detail-section { border-color: var(--border-color); }
+[data-theme='dark'] .stage-select-dropdown { border: 1px solid var(--border-color); background: #202833; color: var(--text-primary); }
+[data-theme='dark'] .tracker-details-close { border-color: var(--border-color); color: var(--text-primary); }
+[data-theme='dark'] .tracker-requested-skills span { background: #1b2c49; color: #9bc1ff; }

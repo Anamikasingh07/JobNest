@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import API from '../services/applicationService';
+import { getProfileCompletion } from '../utils/profileCompletion';
 import './ApplyPage.css';
 
 const ApplyPage = () => {
@@ -8,21 +9,23 @@ const ApplyPage = () => {
   const navigate = useNavigate();
 
   const [job, setJob] = useState(null);
+  const [candidateProfile, setCandidateProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileLoadError, setProfileLoadError] = useState('');
   const [step, setStep] = useState(1); // 1: Contact, 2: Resume, 3: Cover Letter, 4: Questions, 5: Review, 6: Confirmation
   const [validationError, setValidationError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   // Step 1: Contact Details
   const [contactInfo, setContactInfo] = useState({
-    fullName: 'Test Name',
-    email: 'test@email.com',
-    phone: '+91 98765 43210',
-    location: 'Delhi, India'
+    fullName: '',
+    email: '',
+    phone: '',
+    location: ''
   });
 
   // Step 2: Resume Selection
   const [resumeChoice, setResumeChoice] = useState('saved');
-  const [savedResumeName] = useState('Test_Name_Resume.pdf');
   const [newResumeFile, setNewResumeFile] = useState(null);
   const [updateProfileResume, setUpdateProfileResume] = useState(false);
 
@@ -33,15 +36,20 @@ const ApplyPage = () => {
   const [answers, setAnswers] = useState({});
 
   useEffect(() => {
-    // 1. Prefill logged-in candidate profile data
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    if (currentUser.name || currentUser.email) {
-      setContactInfo((prev) => ({
-        ...prev,
-        fullName: currentUser.name || prev.fullName,
-        email: currentUser.email || prev.email
-      }));
-    }
+    API.get('/auth/profile')
+      .then(async ({ data }) => {
+        const profileWithResume = data.hasResume
+          ? { ...data, ...(await API.get('/auth/profile/resume')).data }
+          : data;
+        setCandidateProfile(profileWithResume);
+        setContactInfo((prev) => ({
+          ...prev,
+          fullName: data.name || '', email: data.email || '',
+          phone: data.phone || '', location: data.location || ''
+        }));
+      })
+      .catch((error) => setProfileLoadError(error.response?.data?.message || 'Could not verify your candidate profile.'))
+      .finally(() => setProfileLoading(false));
 
     // 2. Fetch Job Details from backend (with fallback to local check)
     const fetchJobDetails = async () => {
@@ -57,6 +65,9 @@ const ApplyPage = () => {
 
     if (id) fetchJobDetails();
   }, [id]);
+
+  const profileCompletion = getProfileCompletion(candidateProfile, 'candidate');
+  const savedResumeName = candidateProfile?.resumeName || '';
 
   // Handle Stepper Validation & Transitions
   const handleNextStep = () => {
@@ -120,7 +131,7 @@ const ApplyPage = () => {
     }));
 
     try {
-      let resumeData = '';
+      let resumeData = resumeChoice === 'saved' ? (candidateProfile?.resumeData || '') : '';
       if (resumeChoice === 'upload' && newResumeFile) {
         resumeData = await new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -136,7 +147,7 @@ const ApplyPage = () => {
         applicantDetails: contactInfo,
         resume: {
           name: resumeChoice === 'upload' ? newResumeFile.name : savedResumeName,
-          contentType: resumeChoice === 'upload' ? newResumeFile.type : '',
+          contentType: resumeChoice === 'upload' ? newResumeFile.type : (candidateProfile?.resumeContentType || ''),
           data: resumeData
         },
         coverLetter: coverLetterText
@@ -175,6 +186,23 @@ const ApplyPage = () => {
       setSubmitting(false);
     }
   };
+
+  if (profileLoading) {
+    return <div className="focused-apply-page"><main className="apply-body-container"><div className="apply-step-card"><h2>Checking your profile...</h2></div></main></div>;
+  }
+
+  if (profileLoadError || !profileCompletion.complete) {
+    return (
+      <div className="focused-apply-page">
+        <header className="minimal-apply-header"><span className="apply-brand-logo">JobNest</span><button type="button" className="btn-save-close" onClick={() => navigate('/jobs')}>Back to jobs</button></header>
+        <main className="apply-body-container"><div className="apply-step-card">
+          <h2>Complete your candidate profile to apply</h2>
+          <p className="step-subtitle">{profileLoadError || `Add these details to your profile first: ${profileCompletion.missing.join(', ')}.`}</p>
+          <div className="step-nav-actions"><button type="button" className="btn-primary-continue" onClick={() => navigate('/profile')}>Complete profile</button></div>
+        </div></main>
+      </div>
+    );
+  }
 
   return (
     <div className="focused-apply-page">

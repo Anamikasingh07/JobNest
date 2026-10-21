@@ -66,3 +66,52 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+
+.recruiter-applications-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.recruiter-applications-toolbar h3,
+.recruiter-filter-result-count { color: var(--text-primary); }
+
+.recruiter-applications-toolbar h3 { margin: 0; }
+.recruiter-applications-toolbar p { margin: 6px 0 0; color: var(--text-muted); font-size: 13px; }
+.recruiter-applications-toolbar label { display: grid; gap: 6px; color: var(--text-secondary); font-size: 12px; font-weight: 700; }
+.recruiter-applications-toolbar select { min-width: 260px; max-width: min(420px, 80vw); padding: 10px 12px; border: 1px solid var(--border-input); border-radius: 8px; background: var(--bg-card); color: var(--text-primary); font: inherit; }
+.recruiter-filter-result-count { margin: 16px 0 0; font-size: 13px; font-weight: 600; }
+
+.recruiter-dashboard { max-width: 1200px; margin: 20px auto; padding: 0 20px; color: var(--text-primary); }
+.recruiter-dashboard-subtitle { color: var(--text-muted) !important; margin-bottom: 24px; }
+.recruiter-metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+.recruiter-metric-card { padding: 16px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); color: var(--text-primary); }
+.recruiter-metric-card span { color: var(--text-muted) !important; font-size: 13px; }
+.recruiter-metric-card h3 { margin: 8px 0 0; color: var(--text-primary); font-size: 28px; }
+.recruiter-applications-table-wrap { margin-top: 12px; overflow: auto; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); }
+.recruiter-applications-table { width: 100%; border-collapse: collapse; text-align: left; color: var(--text-primary); }
+.recruiter-applications-table th { padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: var(--bg-subtle); color: var(--text-muted); font-size: 12px; font-weight: 600; }
+.recruiter-applications-table td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); font-size: 13px; }
+.recruiter-applicant-email { color: var(--text-muted); font-size: 12px; }
+.recruiter-application-status { display: inline-flex; padding: 4px 10px; border-radius: 12px; background: var(--accent-blue-tint); color: #8bb9ff; font-size: 12px; font-weight: 700; }
+.recruiter-review-button { padding: 6px 12px; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-subtle); color: var(--text-primary); cursor: pointer; font-weight: 600; }
+.recruiter-applications-empty { padding: 24px; color: var(--text-muted); text-align: center; }
+.recruiter-dashboard-loading { padding: 24px; color: var(--text-secondary); }
+
+[data-theme='dark'] .recruiter-dashboard > div[style] { background: var(--bg-card) !important; border-color: var(--border-color) !important; }
+[data-theme='dark'] .recruiter-dashboard > div[style] > div[style] { background: var(--bg-card) !important; border-color: var(--border-color) !important; color: var(--text-primary); }
+[data-theme='dark'] .recruiter-dashboard table thead tr[style] { background: var(--bg-subtle) !important; border-color: var(--border-color) !important; }
+[data-theme='dark'] .recruiter-dashboard th[style] { color: var(--text-muted) !important; }
+[data-theme='dark'] .recruiter-dashboard td[style] { color: var(--text-primary); }
+[data-theme='dark'] .recruiter-dashboard td[style] span[style] { background: var(--accent-blue-tint) !important; color: #8bb9ff !important; }
+[data-theme='dark'] .recruiter-dashboard tr[style] { border-color: var(--border-color) !important; }
+[data-theme='dark'] .recruiter-dashboard button[style] { background: var(--bg-subtle) !important; color: var(--text-primary); border-color: var(--border-input) !important; }
+
+@media (max-width: 640px) {
+  .recruiter-metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .recruiter-dashboard { padding: 0 14px; }
+  .recruiter-applications-toolbar { align-items: stretch; flex-direction: column; }
+  .recruiter-applications-toolbar select { width: 100%; max-width: none; }
+}

@@ -6,6 +6,7 @@ import './AdminDashboard.css';
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [applications, setApplications] = useState([]);
+  const [selectedJobId, setSelectedJobId] = useState('all');
   const [metrics, setMetrics] = useState({ activeJobs: 0, totalApplications: 0, interviews: 0, offers: 0 });
   const [selectedApp, setSelectedApp] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +44,13 @@ const AdminDashboard = () => {
       setLoading(false);
     }
   };
+  const jobOptions = [...new Map(applications.map((app) => {
+    const id = String(app.job?._id || app.job || 'unknown');
+    return [id, { id, title: app.job?.title || 'Job posting' }];
+  })).values()];
+  const filteredApplications = selectedJobId === 'all'
+    ? applications
+    : applications.filter((app) => String(app.job?._id || app.job || 'unknown') === selectedJobId);
   if (loading) return <div style={{ padding: '24px' }}>Loading live candidate submissions...</div>;
 
   return (
@@ -73,7 +81,19 @@ const AdminDashboard = () => {
       </div>
 
       {/* Live Candidate Submissions Table */}
-      <h3>Recent Candidate Submissions ({applications.length})</h3>
+      <div className="recruiter-applications-toolbar">
+        <div>
+          <h3>Candidate Applications</h3>
+          <p>Filter submissions by the job posting they were sent to.</p>
+        </div>
+        <label htmlFor="dashboard-application-job-filter">Job posting
+          <select id="dashboard-application-job-filter" value={selectedJobId} onChange={(event) => setSelectedJobId(event.target.value)}>
+            <option value="all">All job postings ({applications.length})</option>
+            {jobOptions.map((job) => <option key={job.id} value={job.id}>{job.title} ({applications.filter((app) => String(app.job?._id || app.job || 'unknown') === job.id).length})</option>)}
+          </select>
+        </label>
+      </div>
+      <h3 className="recruiter-filter-result-count">Showing {filteredApplications.length} application{filteredApplications.length === 1 ? '' : 's'}</h3>
       <div style={{ background: '#FFF', border: '1px solid #E5E7EB', borderRadius: '8px', overflow: 'hidden', marginTop: '12px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
@@ -86,14 +106,14 @@ const AdminDashboard = () => {
             </tr>
           </thead>
           <tbody>
-            {applications.length === 0 ? (
+            {filteredApplications.length === 0 ? (
               <tr>
                 <td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: '#6B7280' }}>
-                  No candidate submissions received yet for your posted jobs.
+                  {applications.length ? 'No applications have been received for this job posting yet.' : 'No candidate submissions received yet for your posted jobs.'}
                 </td>
               </tr>
             ) : (
-              applications.map((app) => (
+              filteredApplications.map((app) => (
                 <tr key={app._id} style={{ borderBottom: '1px solid #E5E7EB' }}>
                   <td style={{ padding: '14px 16px' }}>
                     <strong>{app.candidate?.name || 'Candidate'}</strong>

@@ -96,19 +96,37 @@ exports.getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
     if (!user) return res.status(404).json({ message: 'Profile not found.' });
-    return res.json(user);
+    const profile = user.toObject();
+    profile.hasResume = Boolean(profile.resumeName);
+    return res.json(profile);
   } catch (err) {
     return res.status(500).json({ message: 'Could not load profile.', error: err.message });
   }
 };
 
+exports.getProfileResume = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('resumeName resumeContentType +resumeData');
+    if (!user?.resumeData || !user.resumeName) return res.status(404).json({ message: 'No saved resume was found.' });
+    return res.json({ resumeName: user.resumeName, resumeContentType: user.resumeContentType, resumeData: user.resumeData });
+  } catch (err) {
+    return res.status(500).json({ message: 'Could not load your saved resume.', error: err.message });
+  }
+};
+
 exports.updateProfile = async (req, res) => {
   try {
-    const fields = ['name', 'phone', 'headline', 'location', 'about', 'skills', 'experience', 'education', 'links', 'companyName', 'companyWebsite', 'companyLocation', 'companyIndustry', 'companyDescription'];
+    const fields = ['name', 'phone', 'headline', 'location', 'about', 'skills', 'experience', 'education', 'links', 'resumeName', 'resumeContentType', 'resumeData', 'companyName', 'companyWebsite', 'companyLocation', 'companyIndustry', 'companyDescription'];
     const updates = {};
     fields.forEach((field) => {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
     });
+    if (updates.resumeData !== undefined && String(updates.resumeData).length > 7 * 1024 * 1024) {
+      return res.status(400).json({ message: 'Resume must be 5 MB or smaller.' });
+    }
+    if (updates.resumeData !== undefined && updates.resumeData && !updates.resumeName?.trim()) {
+      return res.status(400).json({ message: 'Include a file name with the uploaded resume.' });
+    }
     if (updates.skills !== undefined && !Array.isArray(updates.skills)) {
       updates.skills = String(updates.skills).split(',').map((skill) => skill.trim()).filter(Boolean);
     }
@@ -122,7 +140,9 @@ exports.updateProfile = async (req, res) => {
     }
     const user = await User.findByIdAndUpdate(req.user._id, { $set: updates }, { new: true, runValidators: true }).select('-password');
     if (!user) return res.status(404).json({ message: 'Profile not found.' });
-    return res.json({ message: 'Profile saved.', user });
+    const savedProfile = user.toObject();
+    savedProfile.hasResume = Boolean(savedProfile.resumeName);
+    return res.json({ message: 'Profile saved.', user: savedProfile });
   } catch (err) {
     return res.status(500).json({ message: 'Could not save profile.', error: err.message });
   }

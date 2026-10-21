@@ -6,6 +6,7 @@ import './AdminApplications.css';
 const AdminApplications = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [applications, setApplications] = useState([]);
+  const [selectedJobId, setSelectedJobId] = useState('all');
   const [selectedApp, setSelectedApp] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -74,6 +75,14 @@ const AdminApplications = () => {
 
   const applicantName = selectedApp?.applicantDetails?.fullName || selectedApp?.candidate?.name || 'Candidate';
   const applicantEmail = selectedApp?.applicantDetails?.email || selectedApp?.candidate?.email || 'Email unavailable';
+  const jobGroups = applications.reduce((groups, application) => {
+    const jobId = String(application.job?._id || application.job || 'unknown');
+    if (!groups.has(jobId)) groups.set(jobId, { id: jobId, title: application.job?.title || 'Job posting', applications: [] });
+    groups.get(jobId).applications.push(application);
+    return groups;
+  }, new Map());
+  const visibleJobGroups = [...jobGroups.values()].filter((group) => selectedJobId === 'all' || group.id === selectedJobId);
+  const visibleApplicationCount = visibleJobGroups.reduce((count, group) => count + group.applications.length, 0);
   const resumeHref = selectedApp?.resumeData
     ? `data:${selectedApp.resumeContentType || 'application/octet-stream'};base64,${selectedApp.resumeData}`
     : '';
@@ -91,28 +100,41 @@ const AdminApplications = () => {
 
       {error && <div className="applications-error" role="alert">{error}</div>}
 
-      <div className="applications-table-card">
-        {loading ? <p className="applications-empty">Loading applications…</p> : (
-          <table className="applications-table">
-            <thead>
-              <tr><th>Candidate</th><th>Applied job</th><th>Status</th><th>Applied on</th><th /></tr>
-            </thead>
-            <tbody>
-              {applications.length ? applications.map((application) => (
-                <tr key={application._id}>
-                  <td><strong>{application.applicantDetails?.fullName || application.candidate?.name || 'Candidate'}</strong><small>{application.applicantDetails?.email || application.candidate?.email}</small></td>
-                  <td>{application.job?.title || 'Job posting'}</td>
-                  <td>{application.status || 'Applied'}</td>
-                  <td>{application.appliedAt ? new Date(application.appliedAt).toLocaleDateString() : '—'}</td>
-                  <td><button type="button" className="application-review-button" onClick={() => openApplication(application._id)}>Review candidate</button></td>
-                </tr>
-              )) : (
-                <tr><td className="applications-empty" colSpan="5">No applications received for your job postings yet.</td></tr>
-              )}
-            </tbody>
-          </table>
-        )}
+      <div className="applications-toolbar">
+        <label htmlFor="application-job-filter">Filter by job posting
+          <select id="application-job-filter" value={selectedJobId} onChange={(event) => setSelectedJobId(event.target.value)}>
+            <option value="all">All job postings</option>
+            {[...jobGroups.values()].map((group) => <option key={group.id} value={group.id}>{group.title} ({group.applications.length})</option>)}
+          </select>
+        </label>
+        <span>{visibleApplicationCount} application{visibleApplicationCount === 1 ? '' : 's'} across {visibleJobGroups.length} posting{visibleJobGroups.length === 1 ? '' : 's'}</span>
       </div>
+
+      {loading ? <div className="applications-table-card"><p className="applications-empty">Loading applications...</p></div> : visibleJobGroups.length ? (
+        <div className="application-job-groups">
+          {visibleJobGroups.map((group) => (
+            <section className="application-job-group" key={group.id}>
+              <header className="application-job-group-header">
+                <div><p className="applications-eyebrow">JOB POSTING</p><h2>{group.title}</h2></div>
+                <span>{group.applications.length} applicant{group.applications.length === 1 ? '' : 's'}</span>
+              </header>
+              <div className="applications-table-card">
+                <table className="applications-table">
+                  <thead><tr><th>Candidate</th><th>Status</th><th>Applied on</th><th /></tr></thead>
+                  <tbody>{group.applications.map((application) => (
+                    <tr key={application._id}>
+                      <td><strong>{application.applicantDetails?.fullName || application.candidate?.name || 'Candidate'}</strong><small>{application.applicantDetails?.email || application.candidate?.email}</small></td>
+                      <td><span className="application-status-label">{application.status || 'Applied'}</span></td>
+                      <td>{application.appliedAt ? new Date(application.appliedAt).toLocaleDateString() : '—'}</td>
+                      <td><button type="button" className="application-review-button" onClick={() => openApplication(application._id)}>Review candidate</button></td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : <div className="applications-table-card"><p className="applications-empty">{applications.length ? 'No applications for this posting.' : 'No applications received for your job postings yet.'}</p></div>}
 
       {selectedApp && (
         <div className="application-detail-backdrop" onClick={closeDetails}>

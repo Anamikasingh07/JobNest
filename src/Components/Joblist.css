@@ -257,3 +257,33 @@
   color: #6B7280 !important;
   font-size: 15px;
 }
+
+[data-theme='dark'] .job-search-page { background-color: var(--bg-primary) !important; color: var(--text-primary) !important; }
+[data-theme='dark'] .job-filter-bar,
+[data-theme='dark'] .job-feed-status,
+[data-theme='dark'] .job-card-item,
+[data-theme='dark'] .job-detail-pane { background-color: var(--bg-card) !important; border-color: var(--border-color) !important; color: var(--text-primary) !important; }
+[data-theme='dark'] .job-card-item.active { background-color: #1b2c49 !important; border-color: var(--primary-blue) !important; }
+[data-theme='dark'] .filter-input,
+[data-theme='dark'] .filter-select { background-color: #10151c !important; border-color: var(--border-input) !important; color: var(--text-primary) !important; }
+[data-theme='dark'] .card-job-title,
+[data-theme='dark'] .detail-title,
+[data-theme='dark'] .detail-body h3 { color: var(--text-primary) !important; }
+[data-theme='dark'] .card-company-name,
+[data-theme='dark'] .job-match-score { color: #76aaff !important; }
+[data-theme='dark'] .card-location-meta,
+[data-theme='dark'] .card-posted-age,
+[data-theme='dark'] .detail-posted-age,
+[data-theme='dark'] .detail-subtitle,
+[data-theme='dark'] .description-text,
+[data-theme='dark'] .requirements-list,
+[data-theme='dark'] .no-selection-placeholder { color: var(--text-secondary) !important; }
+[data-theme='dark'] .card-salary-badge,
+[data-theme='dark'] .detail-tag { background-color: #202833 !important; color: #c6d0dc !important; }
+[data-theme='dark'] .detail-tag.highlight { background-color: #1b2c49 !important; color: #9bc1ff !important; }
+[data-theme='dark'] .detail-divider { border-top-color: var(--border-color); }
+[data-theme='dark'] .job-skill-match { border-color: var(--border-color); background: #161b22; }
+[data-theme='dark'] .job-match-skill.matched { background: #153b30; color: #8ce0b6; }
+[data-theme='dark'] .job-match-skill.missing { background: #40252b; color: #ffb4b8; }
+[data-theme='dark'] .job-card-no-skills { color: var(--text-muted); }
+[data-theme='dark'] .job-applied-label { border-color: #287451; background: #153b30; color: #8ce0b6; }

@@ -1,6 +1,7 @@
 const Job = require('../models/Job');
 const Application = require('../models/Application');
 const User = require('../models/User');
+const { getMissingProfileFields } = require('../utils/profileCompletion');
 
 // 1. Get all jobs for candidate search/listing
 exports.getAllJobs = async (req, res) => {
@@ -105,6 +106,15 @@ exports.createJob = async (req, res) => {
       return res.status(403).json({ message: 'Only recruiter accounts can post jobs.' });
     }
 
+    const recruiterProfile = await User.findById(req.user._id).select('-password');
+    const missingProfileFields = getMissingProfileFields(recruiterProfile, 'recruiter');
+    if (missingProfileFields.length) {
+      return res.status(400).json({
+        message: 'Complete your recruiter profile before creating a job posting.',
+        missingFields: missingProfileFields
+      });
+    }
+
     const {
       title,
       companyName,
@@ -119,20 +129,30 @@ exports.createJob = async (req, res) => {
       questions
     } = req.body;
 
-    if (!title || !location || !description) {
-      return res.status(400).json({ message: 'Title, location, and description are required.' });
+    const normalizedSkills = Array.isArray(skills)
+      ? skills.map((skill) => String(skill).trim()).filter(Boolean)
+      : String(skills || '').split(',').map((skill) => skill.trim()).filter(Boolean);
+    const resolvedEmploymentType = employmentType || type;
+    const requiredFields = [title, companyName, location, description, salary, workMode, resolvedEmploymentType, experienceLevel];
+    if (requiredFields.some((value) => !String(value || '').trim()) || normalizedSkills.length === 0) {
+      return res.status(400).json({ message: 'Complete every job field, including at least one required skill.' });
+    }
+    if (!['Remote', 'Hybrid', 'On-site'].includes(workMode)
+      || !['Full-time', 'Part-time', 'Contract', 'Internship'].includes(resolvedEmploymentType)
+      || !['Any', 'Entry Level', 'Intermediate (1-3 yrs)', 'Senior Level'].includes(experienceLevel)) {
+      return res.status(400).json({ message: 'Choose valid work mode, employment type, and experience level values.' });
     }
 
     const newJob = new Job({
-      title,
-      companyName: companyName || req.user?.companyName || req.user?.name || 'Company',
-      location,
-      description,
-      skills: Array.isArray(skills) ? skills.map((skill) => String(skill).trim()).filter(Boolean) : String(skills || '').split(',').map((skill) => skill.trim()).filter(Boolean),
-      salary: salary || '',
-      workMode: workMode || 'Remote',
-      employmentType: employmentType || type || 'Full-time',
-      experienceLevel: experienceLevel || 'Any',
+      title: String(title).trim(),
+      companyName: String(companyName).trim(),
+      location: String(location).trim(),
+      description: String(description).trim(),
+      skills: normalizedSkills,
+      salary: String(salary).trim(),
+      workMode,
+      employmentType: resolvedEmploymentType,
+      experienceLevel,
       status: 'Open',
       postedBy: req.user?._id,
       recruiter: req.user?._id,

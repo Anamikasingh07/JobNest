@@ -1,6 +1,8 @@
 const Application = require('../models/Application');
 const Job = require('../models/Job');
 const Notification = require('../models/Notification');
+const User = require('../models/User');
+const { getMissingProfileFields } = require('../utils/profileCompletion');
 
 // 1. Submit Application
 const applyForJob = async (req, res) => {
@@ -9,6 +11,15 @@ const applyForJob = async (req, res) => {
   try {
     if ((req.user.role || '').toLowerCase() !== 'candidate') {
       return res.status(403).json({ message: 'Only candidate accounts can apply for jobs.' });
+    }
+
+    const candidateProfile = await User.findById(req.user._id).select('-password +resumeData');
+    const missingProfileFields = getMissingProfileFields(candidateProfile, 'candidate');
+    if (missingProfileFields.length) {
+      return res.status(400).json({
+        message: 'Complete your candidate profile before applying for a job.',
+        missingFields: missingProfileFields
+      });
     }
 
     jobId = req.params.jobId;

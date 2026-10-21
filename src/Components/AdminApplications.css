@@ -36,4 +36,44 @@
 .candidate-profile-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .candidate-profile-tags span { padding: 5px 9px; border-radius: 16px; background: #edf4ff; color: #2456a3; font-size: 11px; font-weight: 700; }
 .candidate-profile-section ul { margin: 7px 0; padding-left: 20px; color: #5c6677; font-size: 13px; line-height: 1.7; }
+.applications-toolbar { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 18px; color: #667085; font-size: 13px; }
+.applications-toolbar label { display: grid; gap: 7px; color: #344054; font-size: 12px; font-weight: 700; }
+.applications-toolbar select { min-width: min(360px, 80vw); padding: 10px 36px 10px 12px; border: 1px solid #d0d5dd; border-radius: 8px; background: #fff; color: #1d2939; font: inherit; }
+.application-job-groups { display: grid; gap: 20px; }
+.application-job-group { min-width: 0; }
+.application-job-group-header { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 0 2px 10px; }
+.application-job-group-header h2 { margin: 0; color: #1d2939; font-size: 18px; }
+.application-job-group-header > span { flex: none; padding: 6px 10px; border-radius: 20px; background: #edf4ff; color: #2456a3; font-size: 12px; font-weight: 700; }
+.application-status-label { display: inline-flex; padding: 5px 9px; border-radius: 16px; background: #f2f4f7; color: #475467; font-size: 12px; font-weight: 700; }
+[data-theme='dark'] .applications-page { color: #f3f4f6; }
+[data-theme='dark'] .applications-page-header p:not(.applications-eyebrow),
+[data-theme='dark'] .applications-toolbar,
+[data-theme='dark'] .applications-empty { color: #a1aab8; }
+[data-theme='dark'] .applications-count,
+[data-theme='dark'] .applications-table-card,
+[data-theme='dark'] .application-detail-card { border-color: var(--border-color); background: var(--bg-card); color: var(--text-primary); box-shadow: 0 8px 24px #0004; }
+[data-theme='dark'] .applications-toolbar label { color: #d1d5db; }
+[data-theme='dark'] .applications-toolbar select,
+[data-theme='dark'] .application-close-button { border-color: var(--border-input); background: var(--bg-subtle); color: var(--text-primary); }
+[data-theme='dark'] .applications-table th { background: var(--bg-subtle); color: var(--text-muted); }
+[data-theme='dark'] .applications-table td { border-color: var(--border-color); color: var(--text-primary); }
+[data-theme='dark'] .applications-table td small { color: #9aa5b4; }
+[data-theme='dark'] .application-job-group-header h2 { color: #f3f4f6; }
+[data-theme='dark'] .application-job-group-header > span,
+[data-theme='dark'] .candidate-profile-tags span { background: #1e3a5f; color: #bfdbfe; }
+[data-theme='dark'] .application-status-label { background: #202833; color: #c6d0dc; }
+[data-theme='dark'] .application-detail-header,
+[data-theme='dark'] .application-detail-section { border-color: #303641; }
+[data-theme='dark'] .application-detail-section h3,
+[data-theme='dark'] .application-answer strong { color: #e5e7eb; }
+[data-theme='dark'] .application-detail-section p,
+[data-theme='dark'] .candidate-profile-section ul { color: #b5bfcc; }
+[data-theme='dark'] .application-answer { border-color: var(--border-color); background: var(--bg-subtle); }
+[data-theme='dark'] .application-answer p { color: #e5e7eb; }
+[data-theme='dark'] .application-resume-link { background: #1e3a5f; color: #bfdbfe; }
+[data-theme='dark'] .applications-error { border-color: #713b3b; background: #321f22; color: #fecaca; }
+[data-theme='dark'] .application-status-button.interview { border-color: #287451; background: #153b30; color: #8ce0b6; }
+[data-theme='dark'] .application-status-button.hold { border-color: #70572b; background: #3b2d19; color: #f1ca7a; }
+[data-theme='dark'] .application-status-button.reject { border-color: #65363c; background: #40252b; color: #ffb4b8; }
+@media (max-width: 640px) { .applications-toolbar { align-items: stretch; flex-direction: column; } .applications-toolbar select { width: 100%; min-width: 0; } .application-job-group-header { align-items: start; } }
 @media (max-width: 640px) { .applications-page { width: calc(100% - 24px); margin: 22px auto; } .applications-page-header { align-items: start; flex-direction: column; } .application-detail-card { padding: 19px; } }

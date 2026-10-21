@@ -34,6 +34,11 @@
   font-weight: 600;
   cursor: pointer;
 }
+.btn-create-job:disabled { opacity: .55; cursor: not-allowed; }
+.profile-completion-notice { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 0 0 20px; padding: 16px 18px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-card); color: var(--text-primary); }
+.profile-completion-notice p { margin: 6px 0 0; color: var(--text-secondary); font-size: 13px; }
+.profile-completion-notice button { flex: none; padding: 9px 14px; border: 0; border-radius: 7px; background: var(--primary-blue); color: #fff; font-weight: 700; cursor: pointer; }
+@media (max-width: 600px) { .profile-completion-notice { align-items: stretch; flex-direction: column; } }
 
 .no-jobs-card {
   background-color: #FFFFFF;
@@ -226,3 +231,25 @@
 .btn-job-status:hover { background: #fee2e2; }
 .btn-job-status.republish { border-color: #A7F3D0; background: #ECFDF5; color: #047857; }
 .btn-job-status.republish:hover { background: #D1FAE5; }
+
+[data-theme='dark'] .manage-jobs-page { color: var(--text-primary); }
+[data-theme='dark'] .manage-jobs-header .subtitle,
+[data-theme='dark'] .card-type-tag { color: var(--text-muted); }
+[data-theme='dark'] .no-jobs-card,
+[data-theme='dark'] .recruiter-job-card,
+[data-theme='dark'] .modal-box { background-color: var(--bg-card); border-color: var(--border-color); color: var(--text-primary); }
+[data-theme='dark'] .job-card-title,
+[data-theme='dark'] .job-card-salary,
+[data-theme='dark'] .modal-header h3 { color: var(--text-primary); }
+[data-theme='dark'] .job-card-company { color: #76aaff; }
+[data-theme='dark'] .job-card-meta { color: var(--text-secondary); }
+[data-theme='dark'] .form-group label { color: var(--text-secondary); }
+[data-theme='dark'] .modal-form input,
+[data-theme='dark'] .modal-form select,
+[data-theme='dark'] .modal-form textarea { border-color: var(--border-input); background: #10151c; color: var(--text-primary); }
+[data-theme='dark'] .btn-cancel { background: var(--bg-subtle); color: var(--text-primary); }
+[data-theme='dark'] .btn-close-x { color: var(--text-muted); }
+[data-theme='dark'] .btn-job-status { border-color: #65363c; background: #40252b; color: #ffb4b8; }
+[data-theme='dark'] .btn-job-status:hover { background: #512d34; }
+[data-theme='dark'] .btn-job-status.republish { border-color: #287451; background: #153b30; color: #8ce0b6; }
+[data-theme='dark'] .btn-job-status.republish:hover { background: #1a4d3c; }

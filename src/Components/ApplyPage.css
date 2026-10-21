@@ -321,3 +321,29 @@
   font-weight: 600;
   color: #1D4F9F;
 }
+
+[data-theme='dark'] .minimal-apply-header { background: var(--bg-card); border-color: var(--border-color); }
+[data-theme='dark'] .job-title-pill { background: var(--bg-subtle); color: var(--text-secondary); }
+[data-theme='dark'] .apply-brand-logo,
+[data-theme='dark'] .btn-save-close { color: #8bb9ff; }
+[data-theme='dark'] .apply-step-card { background: var(--bg-card); border-color: var(--border-color); box-shadow: 0 8px 24px #0003; }
+[data-theme='dark'] .apply-step-card h2,
+[data-theme='dark'] .review-header h3 { color: var(--text-primary); }
+[data-theme='dark'] .step-subtitle,
+[data-theme='dark'] .step-count,
+[data-theme='dark'] .resume-card-info p { color: var(--text-muted); }
+[data-theme='dark'] .form-group label,
+[data-theme='dark'] .checkbox-label { color: var(--text-secondary); }
+[data-theme='dark'] .form-group input,
+[data-theme='dark'] .form-group textarea { border-color: var(--border-input); background: #10151c; color: var(--text-primary); }
+[data-theme='dark'] .resume-radio-card { border-color: var(--border-input); color: var(--text-primary); }
+[data-theme='dark'] .resume-radio-card.active,
+[data-theme='dark'] .btn-ai-generate { border-color: #315995; background: #1b2c49; color: #9bc1ff; }
+[data-theme='dark'] .review-section-box p { color: var(--text-secondary); }
+[data-theme='dark'] .step-progress-track { background: var(--bg-subtle); }
+[data-theme='dark'] .step-nav-actions { border-color: var(--border-color); }
+[data-theme='dark'] .btn-secondary-back { border-color: var(--border-input); background: var(--bg-subtle); color: var(--text-primary); }
+[data-theme='dark'] .review-section-box,
+[data-theme='dark'] .suggested-job-tile { border-color: var(--border-color); background: #10151c; }
+[data-theme='dark'] .suggested-job-tile h4 { color: var(--text-primary); }
+[data-theme='dark'] .suggested-job-tile p { color: var(--text-muted); }
