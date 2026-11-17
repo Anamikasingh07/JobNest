@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 // 1. Register User
 exports.register = async (req, res) => {
@@ -22,10 +23,11 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
+    const hashedPassword = await bcrypt.hash(password, 12);
     const user = new User({
       name: name.trim(),
       email: cleanEmail,
-      password,
+      password: hashedPassword,
       role: cleanRole
     });
 
@@ -33,7 +35,7 @@ exports.register = async (req, res) => {
 
     const token = jwt.sign(
       { _id: user._id, role: user.role },
-      process.env.JWT_SECRET || 'secret',
+      process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? (() => { throw new Error('JWT_SECRET is required in production.'); })() : 'secret'),
       { expiresIn: '7d' }
     );
 
@@ -66,8 +68,18 @@ exports.login = async (req, res) => {
     }
 
     // Verify password
-    if (user.password !== password) {
+    const isBcryptHash = /^\$2[aby]\$/.test(user.password);
+    const passwordMatches = isBcryptHash
+      ? await bcrypt.compare(password, user.password)
+      : user.password === password;
+    if (!passwordMatches) {
       return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Upgrade older plain-text credentials the first time an account signs in.
+    if (!isBcryptHash) {
+      user.password = await bcrypt.hash(password, 12);
+      await user.save();
     }
 
     // Verify role (reject candidate trying to log in under recruiter tab & vice versa)
@@ -78,7 +90,7 @@ exports.login = async (req, res) => {
 
     const token = jwt.sign(
       { _id: user._id, role: storedRole },
-      process.env.JWT_SECRET || 'secret',
+      process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? (() => { throw new Error('JWT_SECRET is required in production.'); })() : 'secret'),
       { expiresIn: '7d' }
     );
 

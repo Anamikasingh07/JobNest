@@ -1,7 +1,8 @@
 import axios from "axios";
+import { API_BASE_URL } from './apiConfig';
 
 const API =
-  "http://localhost:5000/api/jobs";
+  `${API_BASE_URL}/jobs`;
 
 /* GET ALL JOBS */
 export const getJobs =

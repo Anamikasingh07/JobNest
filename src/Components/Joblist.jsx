@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/applicationService';
 import './Joblist.css';
@@ -32,6 +32,10 @@ const JobList = () => {
   const [jobs, setJobs] = useState([]);
   const [appliedJobIds, setAppliedJobIds] = useState(() => new Set());
   const [candidateSkills, setCandidateSkills] = useState([]);
+  const [aiMatch, setAiMatch] = useState(null);
+  const [aiMatchLoading, setAiMatchLoading] = useState(false);
+  const [aiMatchError, setAiMatchError] = useState('');
+  const aiMatchCache = useRef(new Map());
   const [selectedJob, setSelectedJob] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,6 +53,25 @@ const JobList = () => {
   useEffect(() => {
     API.get('/auth/profile').then(({ data }) => setCandidateSkills(data.skills || [])).catch(() => setCandidateSkills([]));
   }, []);
+
+  useEffect(() => {
+    if (!selectedJob?._id) return;
+    let active = true;
+    setAiMatch(null);
+    setAiMatchError('');
+    const cachedMatch = aiMatchCache.current.get(String(selectedJob._id));
+    if (cachedMatch) {
+      setAiMatch(cachedMatch);
+      setAiMatchLoading(false);
+      return;
+    }
+    setAiMatchLoading(true);
+    API.get(`/ai/job-match/${selectedJob._id}`, { timeout: 70000 })
+      .then(({ data }) => { if (active) { aiMatchCache.current.set(String(selectedJob._id), data); setAiMatch(data); } })
+      .catch((error) => { if (active) setAiMatchError(error.response?.data?.message || 'AI match details are unavailable.'); })
+      .finally(() => { if (active) setAiMatchLoading(false); });
+    return () => { active = false; };
+  }, [selectedJob?._id]);
 
   const fetchJobs = async () => {
     try {
@@ -93,6 +116,8 @@ const JobList = () => {
   const matchingSkills = requiredSkills.filter((skill) => candidateSkillSet.has(normalizeSkill(skill)));
   const missingSkills = requiredSkills.filter((skill) => !candidateSkillSet.has(normalizeSkill(skill)));
   const matchScore = requiredSkills.length ? Math.round((matchingSkills.length / requiredSkills.length) * 100) : null;
+  const displayedMatchedSkills = aiMatch?.matchedSkills || matchingSkills;
+  const displayedMissingSkills = aiMatch?.missingSkills || missingSkills;
 
   return (
     <div className="job-search-page">
@@ -201,16 +226,20 @@ const JobList = () => {
 
               <div className="detail-body">
                 <section className="job-skill-match">
-                  <h3>ATS compatibility score</h3>
+                  <h3>AI job fit estimate</h3>
+                  {aiMatchLoading && <p>Analyzing your profile against this job with Gemini...</p>}
+                  {aiMatchError && <p>{aiMatchError}</p>}
                   {matchScore === null ? (
                     <p>This employer has not listed specific skills for this job yet.</p>
                   ) : (
                     <>
-                      <p className="job-match-score">{matchScore}% ATS-style profile match</p>
-                      <p>{matchScore >= 80 ? 'Strong skill match — these skills can help your application stand out.' : matchScore >= 50 ? 'Some relevant skills match and may strengthen your application.' : 'A few required skills match; review the missing skills below.'} The estimate compares your listed skills with this job’s listed skills; it does not predict a hiring decision.</p>
+                      <p className="job-match-score">{aiMatch ? `${aiMatch.score}% AI profile fit` : `${matchScore}% listed-skill overlap`}</p>
+                      <p>{aiMatch?.rationale || 'Comparing skills listed on your profile with skills requested in the posting.'} This is an estimate of profile alignment, not a prediction of a hiring decision.</p>
+                      {aiMatch?.standout && <p><strong>Potential strength:</strong> {aiMatch.standout}</p>}
+                      {aiMatch?.improve && <p><strong>Could strengthen:</strong> {aiMatch.improve}</p>}
                       <div className="job-match-skill-groups">
                         <div><strong>Skills requested by the recruiter</strong><div>{requiredSkills.map((skill) => {
-                          const matched = candidateSkillSet.has(normalizeSkill(skill));
+                          const matched = displayedMatchedSkills.some((item) => normalizeSkill(item) === normalizeSkill(skill));
                           return <span className={`job-match-skill ${matched ? 'matched' : 'missing'}`} key={`required-${skill}`}>{matched ? '✓ ' : '× '}{skill}</span>;
                         })}</div></div>
                         <div className="job-match-legend"><span className="job-match-skill matched">Matches your profile</span><span className="job-match-skill missing">Not listed in your profile</span></div>

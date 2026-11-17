@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import API from '../services/applicationService';
 import './AuthPage.css';
 
 const AuthPage = () => {
@@ -26,7 +26,7 @@ const AuthPage = () => {
       const payload = isSignIn
         ? { email: email.trim(), password, role }
         : { name: name.trim(), email: email.trim(), password, role };
-      const response = await axios.post(`http://localhost:5000/api/auth/${endpoint}`, payload);
+      const response = await API.post(`/auth/${endpoint}`, payload);
       const user = response.data.user;
       const userRole = (user.role || 'candidate').toLowerCase();
 

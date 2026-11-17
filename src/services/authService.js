@@ -1,7 +1,8 @@
 import axios from "axios";
+import { API_BASE_URL } from './apiConfig';
 
 const API =
-  "http://localhost:5000/api/auth";
+  `${API_BASE_URL}/auth`;
 
 /* REGISTER */
 export const registerUser =

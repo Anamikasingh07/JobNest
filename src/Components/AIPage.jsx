@@ -5,6 +5,9 @@ import './AIPage.css';
 
 const MAX_RESUME_BYTES = 5 * 1024 * 1024;
 const SUPPORTED_RESUME_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'bmp'];
+const getAiErrorMessage = (error, fallback) => error.code === 'ECONNABORTED'
+  ? 'Gemini is taking too long to respond. Please try again.'
+  : error.response?.data?.message || fallback;
 
 const getRealResumeType = (bytes) => {
   if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46 && bytes[4] === 0x2d) return 'pdf';
@@ -146,8 +149,15 @@ const AIPage = () => {
   const [requiredSkills, setRequiredSkills] = useState((Array.isArray(location.state?.skills) ? location.state.skills : []).join(', '));
   const [availableJobs, setAvailableJobs] = useState([]);
   const [selectedJobId, setSelectedJobId] = useState('');
+  const [aiQuestions, setAiQuestions] = useState([]);
+  const [revisionTopics, setRevisionTopics] = useState([]);
+  const [prepLoading, setPrepLoading] = useState(false);
+  const [prepError, setPrepError] = useState('');
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [answer, setAnswer] = useState('');
+  const [feedback, setFeedback] = useState([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState('');
   const [star, setStar] = useState({ situation: '', task: '', action: '', result: '' });
   const [resumeText, setResumeText] = useState('');
   const [reviewRequested, setReviewRequested] = useState(false);
@@ -155,6 +165,9 @@ const AIPage = () => {
   const [ocrProgress, setOcrProgress] = useState(0);
   const [ocrStatus, setOcrStatus] = useState('');
   const [ocrError, setOcrError] = useState('');
+  const [resumeReview, setResumeReview] = useState([]);
+  const [resumeReviewLoading, setResumeReviewLoading] = useState(false);
+  const [resumeReviewError, setResumeReviewError] = useState('');
 
   useEffect(() => {
     API.get('/jobs').then(({ data }) => {
@@ -169,64 +182,65 @@ const AIPage = () => {
     return [...new Set(requiredSkills.split(',').map((skill) => skill.trim()).filter(Boolean))];
   }, [requiredSkills]);
 
-  const questions = useMemo(() => {
-    if (!jobTitle.trim() && !jobDescription.trim()) return [];
-    const title = jobTitle.trim() || 'this role';
-    const company = companyName.trim() || 'the company';
-    return [
-      ...skills.slice(0, 5).map((skill, index) => ({
-        id: `technical-${index}`,
-        category: 'Technical',
-        question: `How have you used ${skill} to solve a challenging problem? What approach did you take, and what was the result?`
-      })),
-      {
-        id: 'technical-role', category: 'Technical',
-        question: `What would you prioritize in your first project as a ${title}, and how would you measure whether it succeeded?`
-      },
-      {
-        id: 'behavioral-team', category: 'Behavioral',
-        question: 'Tell me about a time you had to work through a difficult challenge with a team.'
-      },
-      {
-        id: 'behavioral-impact', category: 'Behavioral',
-        question: 'Describe an achievement you are proud of and the impact your contribution had.'
-      },
-      {
-        id: 'company', category: 'Company',
-        question: `Why are you interested in working at ${company}, and what would you contribute in this role?`
-      }
-    ];
-  }, [skills, jobTitle, companyName, jobDescription]);
+  const generateInterviewPrep = async () => {
+    setPrepError('');
+    setPrepLoading(true);
+    setAiQuestions([]);
+    setRevisionTopics([]);
+    setSelectedQuestion(null);
+    try {
+      const { data } = await API.post('/ai/interview-prep', {
+        title: jobTitle, company: companyName, description: jobDescription, skills
+      }, { timeout: 70000 });
+      setAiQuestions((data.questions || []).map((item, index) => ({ ...item, id: item.id || `generated-${index}` })));
+      setRevisionTopics(data.topics || []);
+    } catch (error) {
+      setPrepError(getAiErrorMessage(error, 'Could not generate interview prep. Try again.'));
+    } finally {
+      setPrepLoading(false);
+    }
+  };
 
-  const resumeChecklist = useMemo(() => makeResumeChecklist(resumeText), [resumeText]);
-  const feedback = useMemo(() => {
-    if (!selectedQuestion || !answer.trim()) return [];
-    const words = answer.trim().split(/\s+/).filter(Boolean);
-    const sentences = answer.split(/[.!?]+/).filter((sentence) => sentence.trim().length > 0);
-    const items = [];
-    items.push(words.length >= 45
-      ? { label: 'Detail', text: 'Your answer has enough detail to explain your thinking.' }
-      : { label: 'Add detail', text: 'Expand your answer with a specific example and the outcome. Aim for a few complete sentences.' });
-    items.push(sentences.length >= 2
-      ? { label: 'Clarity', text: 'Your answer is split into clear thoughts. Remove repeated details if it feels long.' }
-      : { label: 'Clarity', text: 'Use short, complete sentences so the interviewer can follow your point.' });
-    if (selectedQuestion.category === 'Behavioral') {
-      const present = ['situation', 'task', 'action', 'result'].filter((part) =>
-        new RegExp(`\\b${part}\\b`, 'i').test(answer) || Boolean(star[part].trim())
-      );
-      items.push(present.length === 4
-        ? { label: 'STAR structure', text: 'Your answer covers Situation, Task, Action, and Result.' }
-        : { label: 'STAR structure', text: `Add the missing STAR parts: ${['situation', 'task', 'action', 'result'].filter((part) => !present.includes(part)).map((part) => part[0].toUpperCase() + part.slice(1)).join(', ')}.` });
+  const requestPracticeFeedback = async () => {
+    if (!selectedQuestion || !answer.trim()) return;
+    setFeedbackError('');
+    setFeedbackLoading(true);
+    setFeedback([]);
+    try {
+      const { data } = await API.post('/ai/practice-feedback', {
+        question: selectedQuestion.question, category: selectedQuestion.category,
+        answer, jobTitle, skills
+      }, { timeout: 70000 });
+      setFeedback(data.feedback || []);
+    } catch (error) {
+      setFeedbackError(getAiErrorMessage(error, 'Could not review this answer. Try again.'));
+    } finally {
+      setFeedbackLoading(false);
     }
-    if (skills.length && !skills.some((skill) => answer.toLowerCase().includes(skill.toLowerCase()))) {
-      items.push({ label: 'Role relevance', text: 'Connect your example to one of the job’s required skills where it fits.' });
+  };
+
+  const requestResumeReview = async () => {
+    if (!resumeText.trim()) return;
+    setResumeReviewError('');
+    setResumeReviewLoading(true);
+    setResumeReview([]);
+    setReviewRequested(false);
+    try {
+      const { data } = await API.post('/ai/resume-review', { resumeText }, { timeout: 70000 });
+      setResumeReview(data.actions || []);
+      setReviewRequested(true);
+    } catch (error) {
+      setResumeReviewError(getAiErrorMessage(error, 'Could not review this resume. Try again.'));
+    } finally {
+      setResumeReviewLoading(false);
     }
-    return items;
-  }, [answer, selectedQuestion, skills, star]);
+  };
 
   const selectQuestion = (question) => {
     setSelectedQuestion(question);
     setAnswer('');
+    setFeedback([]);
+    setFeedbackError('');
     setStar({ situation: '', task: '', action: '', result: '' });
   };
 
@@ -236,6 +250,8 @@ const AIPage = () => {
     setOcrError('');
     setResumeText('');
     setReviewRequested(false);
+    setResumeReview([]);
+    setResumeReviewError('');
     setOcrProgress(0);
 
     if (file.size > MAX_RESUME_BYTES) {
@@ -279,8 +295,8 @@ const AIPage = () => {
         return;
       }
       setResumeText(extractedText);
-      setReviewRequested(true);
-      setOcrStatus('Resume text extracted. Review the text below and edit any OCR mistakes.');
+      setReviewRequested(false);
+      setOcrStatus('Resume text extracted. Review the text below, edit OCR mistakes, then request the AI review.');
     } catch (error) {
       setOcrError(error.message || 'Could not read this resume. Try another file or paste the text below.');
       setOcrStatus('');
@@ -307,6 +323,9 @@ const AIPage = () => {
     setJobDescription(job.description || '');
     setRequiredSkills(Array.isArray(job.skills) ? job.skills.join(', ') : '');
     setSelectedQuestion(null);
+    setAiQuestions([]);
+    setRevisionTopics([]);
+    setPrepError('');
     setAnswer('');
   };
 
@@ -334,14 +353,16 @@ const AIPage = () => {
             <label>Company<input value={companyName} onChange={(event) => setCompanyName(event.target.value)} placeholder="Company name" /></label>
             <label>Required skills<input value={requiredSkills} onChange={(event) => setRequiredSkills(event.target.value)} placeholder="React, TypeScript, REST APIs" /></label>
             <label>Job description<textarea rows="6" value={jobDescription} onChange={(event) => setJobDescription(event.target.value)} placeholder="Paste the job description" /></label>
+            <button type="button" className="ai-primary-button" disabled={prepLoading || (!jobTitle.trim() && !jobDescription.trim())} onClick={generateInterviewPrep}>{prepLoading ? 'Generating with Gemini...' : 'Generate interview prep'}</button>
+            {prepError && <p className="ai-ocr-error" role="alert">{prepError}</p>}
           </div>
 
           <div className="ai-tool-card ai-interview-results">
             <h2>Likely interview questions</h2>
-            {!questions.length ? <p className="ai-tool-empty">Enter a job title or description to generate practice questions.</p> : (
+            {!aiQuestions.length ? <p className="ai-tool-empty">Choose a job or enter its details, then generate job-specific questions with Gemini.</p> : (
               <>
                 <div className="ai-question-list">
-                  {questions.map((item) => (
+                  {aiQuestions.map((item) => (
                     <button type="button" key={item.id} className={`ai-question-card ${selectedQuestion?.id === item.id ? 'selected' : ''}`} onClick={() => selectQuestion(item)}>
                       <span className={`ai-question-category ${item.category.toLowerCase()}`}>{item.category}</span>
                       <strong>{item.question}</strong>
@@ -351,7 +372,7 @@ const AIPage = () => {
                 </div>
                 <section className="ai-revision-topics">
                   <h3>Topics to revise</h3>
-                  {skills.length ? <div className="ai-topic-chips">{skills.map((skill) => <span key={skill}>{skill}</span>)}</div> : <p>Add the required skills above to see revision topics.</p>}
+                  <div className="ai-topic-chips">{revisionTopics.map((topic) => <span key={topic}>{topic}</span>)}</div>
                 </section>
               </>
             )}
@@ -368,6 +389,8 @@ const AIPage = () => {
                 </div>
               )}
               <label className="ai-answer-label">Your answer<textarea rows="6" value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="Type your answer here..." /></label>
+              <button type="button" className="ai-primary-button" disabled={!answer.trim() || feedbackLoading} onClick={requestPracticeFeedback}>{feedbackLoading ? 'Reviewing answer...' : 'Get AI feedback'}</button>
+              {feedbackError && <p className="ai-ocr-error" role="alert">{feedbackError}</p>}
               {feedback.length > 0 && <div className="ai-feedback"><h3>Answer feedback</h3>{feedback.map((item) => <p key={item.label}><strong>{item.label}:</strong> {item.text}</p>)}</div>}
             </section>
           )}
@@ -383,11 +406,12 @@ const AIPage = () => {
           {!ocrLoading && ocrStatus && <p className="ai-ocr-status" role="status">{ocrStatus}</p>}
           {ocrError && <p className="ai-ocr-error" role="alert">{ocrError}</p>}
           <label className="ai-resume-text-label">Resume text<textarea rows="15" value={resumeText} onChange={(event) => { setResumeText(event.target.value); setReviewRequested(false); }} placeholder="Extracted text appears here. You can also paste your resume manually, including headings and experience bullets..." /></label>
-          <button type="button" className="ai-primary-button" disabled={!resumeText.trim() || ocrLoading} onClick={() => setReviewRequested(true)}>Review resume</button>
+          <button type="button" className="ai-primary-button" disabled={!resumeText.trim() || ocrLoading || resumeReviewLoading} onClick={requestResumeReview}>{resumeReviewLoading ? 'Reviewing with Gemini...' : 'Review resume with AI'}</button>
+          {resumeReviewError && <p className="ai-ocr-error" role="alert">{resumeReviewError}</p>}
           {reviewRequested && (
             <div className="ai-resume-checklist">
               <h3>Suggested actions</h3>
-              {resumeChecklist.map((item) => <article className={`ai-checklist-item ${item.needsAttention ? 'needs-attention' : ''}`} key={item.id}><span aria-hidden="true">{item.needsAttention ? '!' : '✓'}</span><div><strong>{item.title}</strong><p>{item.detail}</p></div></article>)}
+              {resumeReview.map((item, index) => <article className="ai-checklist-item" key={`${item.title}-${index}`}><span aria-hidden="true">{item.priority === 'High' ? '!' : '•'}</span><div><strong>{item.title} <small>{item.priority} priority</small></strong><p>{item.detail}</p></div></article>)}
             </div>
           )}
         </section>
