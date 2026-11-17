@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "node backend/server.js",
-    "render-build": "npm install && npm run build && npm install --prefix backend"
+    "render-build": "npm ci --include=dev && npm run build && npm ci --prefix backend --omit=dev"
   },
   "dependencies": {
     "axios": "^1.16.1",
